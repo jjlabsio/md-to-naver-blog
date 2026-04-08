@@ -240,7 +240,7 @@ function parseBlocks(lines: string[]): Block[] {
       i++;
     }
     if (paraLines.length > 0) {
-      blocks.push({ type: "paragraph", content: paraLines.join(" ") });
+      blocks.push({ type: "paragraph", content: paraLines.join("\n") });
     }
   }
 
@@ -398,7 +398,9 @@ function renderHeading(block: Block): string {
 }
 
 function renderParagraph(content: string): string {
-  return `<p>${processInline(content)}</p>`;
+  const lines = content.split("\n");
+  const rendered = lines.map((line) => processInline(line)).join("<br>");
+  return `<p>${rendered}</p>`;
 }
 
 function renderCodeBlock(block: Block): string {
@@ -427,6 +429,10 @@ function highlightCode(line: string, lang: string): string {
     case "py":
       result = highlightPython(line);
       break;
+    case "yaml":
+    case "yml":
+      result = highlightYaml(line);
+      break;
     default:
       result = escapeHtml(line);
       break;
@@ -453,6 +459,10 @@ function escapeHtml(str: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function escapeHtmlPreserveQuotes(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 // ===================== JavaScript Highlighting =====================
@@ -1008,6 +1018,100 @@ function renderPythonToken(
   }
 
   return escapeHtml(value);
+}
+
+// ===================== YAML Highlighting =====================
+
+function highlightYaml(line: string): string {
+  // Comment line: # ...
+  if (/^\s*#/.test(line)) {
+    return `<span style="color: #6a737d;">${escapeHtml(line)}</span>`;
+  }
+
+  // Document separator: ---
+  if (/^---\s*$/.test(line)) {
+    return `<span style="color: #005cc5;">${escapeHtml(line)}</span>`;
+  }
+
+  // Key-value line: key: value
+  const kvMatch = line.match(/^(\s*)(- )?([a-zA-Z_][a-zA-Z0-9_]*)(:)(.*)?$/);
+  if (kvMatch) {
+    const [, indent, dash, key, colon, rest] = kvMatch;
+    let result = escapeHtml(indent);
+
+    if (dash) {
+      result += `<span>${escapeHtml(dash.trimEnd())}</span> `;
+    }
+
+    result += `<span style="color: #005cc5;">${escapeHtml(key + colon)}</span>`;
+
+    if (rest !== undefined && rest !== "") {
+      result += highlightYamlValue(rest);
+    }
+
+    return result;
+  }
+
+  // List item without key: - value
+  const listMatch = line.match(/^(\s*)(- )(.+)$/);
+  if (listMatch) {
+    const [, indent, dash, value] = listMatch;
+    let result = escapeHtml(indent);
+    result += `<span>${escapeHtml(dash.trimEnd())}</span> `;
+    result += highlightYamlValue(" " + value).slice(1); // trim leading space handling
+    return result;
+  }
+
+  return escapeHtml(line);
+}
+
+function highlightYamlValue(value: string): string {
+  // Process inline value after the colon
+  let result = "";
+  let i = 0;
+
+  while (i < value.length) {
+    // Spaces
+    if (value[i] === " ") {
+      result += " ";
+      i++;
+      continue;
+    }
+
+    // Quoted string
+    if (value[i] === '"' || value[i] === "'") {
+      const quote = value[i];
+      let s = quote;
+      i++;
+      while (i < value.length && value[i] !== quote) {
+        s += value[i];
+        i++;
+      }
+      if (i < value.length) {
+        s += quote;
+        i++;
+      }
+      result += `<span style="color: #032f62;">${escapeHtmlPreserveQuotes(s)}</span>`;
+      continue;
+    }
+
+    // Boolean, null, numbers
+    const restOfValue = value.slice(i);
+    const boolMatch = restOfValue.match(
+      /^(true|false|null|yes|no|on|off|\d+(?:\.\d+)?)\b/,
+    );
+    if (boolMatch) {
+      result += `<span style="color: #005cc5;">${escapeHtml(boolMatch[1])}</span>`;
+      i += boolMatch[1].length;
+      continue;
+    }
+
+    // Other characters (brackets, commas, etc.)
+    result += escapeHtml(value[i]);
+    i++;
+  }
+
+  return result;
 }
 
 // ===================== Blockquote =====================
