@@ -1,6 +1,10 @@
 {
-  "name": "md-to-naver-blog",
+  "name": "@jjlabsio/md-to-naver-blog",
   "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jjlabsio/md-to-naver-blog"
+  },
   "type": "module",
   "exports": {
     ".": {
