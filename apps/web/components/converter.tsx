@@ -27,7 +27,7 @@ export function Converter() {
         <CopyButton html={html} />
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto lg:grid lg:grid-cols-2 lg:grid-rows-1 lg:overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-px lg:grid lg:grid-cols-2 lg:grid-rows-1 lg:overflow-hidden lg:p-0">
         <MarkdownInput value={markdownInput} onChange={setMarkdownInput} />
         <HtmlPreview html={html} />
       </div>
