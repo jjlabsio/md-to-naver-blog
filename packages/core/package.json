@@ -3,7 +3,7 @@
   "version": "1.0.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jjlabsio/md-to-naver-blog"
+    "url": "git+https://github.com/jjlabsio/md-to-naver-blog.git"
   },
   "type": "module",
   "exports": {
