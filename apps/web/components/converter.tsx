@@ -6,7 +6,6 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { MarkdownInput } from "@/components/markdown-input";
 import { HtmlPreview } from "@/components/html-preview";
 import { CopyButton } from "@/components/copy-button";
-import { MobileTabs } from "@/components/mobile-tabs";
 
 export function Converter() {
   const [markdownInput, setMarkdownInput] = useState("");
@@ -28,17 +27,9 @@ export function Converter() {
         <CopyButton html={html} />
       </div>
 
-      <div className="hidden min-h-0 flex-1 md:grid md:grid-cols-2 md:gap-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:grid lg:grid-cols-2">
         <MarkdownInput value={markdownInput} onChange={setMarkdownInput} />
         <HtmlPreview html={html} />
-      </div>
-
-      <div className="flex flex-1 flex-col md:hidden">
-        <MobileTabs
-          markdownInput={markdownInput}
-          onMarkdownChange={setMarkdownInput}
-          html={html}
-        />
       </div>
     </div>
   );
