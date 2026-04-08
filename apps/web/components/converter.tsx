@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { convert } from "md-to-naver-blog";
+import { convert } from "@jjlabsio/md-to-naver-blog";
 import { useDebounce } from "@/hooks/use-debounce";
 import { MarkdownInput } from "@/components/markdown-input";
 import { HtmlPreview } from "@/components/html-preview";
