@@ -24,8 +24,7 @@ export default function RootLayout({
       <body>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="light"
           storageKey="md-to-naver-blog-theme"
         >
           {children}
