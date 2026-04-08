@@ -1,11 +1,8 @@
 name: Release
 
-# TODO: 개발 완료 후 아래 트리거로 복원할 것
-# on:
-#   push:
-#     branches: [main]
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
