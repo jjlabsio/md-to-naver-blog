@@ -1,5 +1,21 @@
 # md-to-naver-blog
 
+## v1.1.1
+
+[compare changes](https://github.com/jjlabsio/md-to-naver-blog/compare/v1.1.0...v1.1.1)
+
+### 🩹 Fixes
+
+- **core:** README 오탈자 수정 ([5d66f12](https://github.com/jjlabsio/md-to-naver-blog/commit/5d66f12))
+
+### 📖 Documentation
+
+- Core README 추가 및 패키지명 @jjlabsio 스코프로 업데이트 ([92752b0](https://github.com/jjlabsio/md-to-naver-blog/commit/92752b0))
+
+### ❤️ Contributors
+
+- 송재진 ([@jjlabsio](https://github.com/jjlabsio))
+
 ## v1.1.0
 
 ### 🚀 Enhancements
