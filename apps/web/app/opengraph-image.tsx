@@ -7,7 +7,7 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default async function Image() {
-  const iconData = await readFile(join(process.cwd(), "public", "icon.png"));
+  const iconData = await readFile(join(process.cwd(), "public", "logo.png"));
   const iconBase64 = `data:image/png;base64,${iconData.toString("base64")}`;
 
   return new ImageResponse(

@@ -1,6 +1,5 @@
+import Image from "next/image";
 import { Converter } from "@/components/converter";
-import { ThemeLogo } from "@/components/theme-logo";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 
 function GitHubIcon({ className }: { className?: string }) {
@@ -21,22 +20,25 @@ export default function Home() {
     <main className="mx-auto flex h-screen max-w-7xl flex-col overflow-hidden p-4">
       <header className="flex items-center justify-between pb-4">
         <div className="flex items-center gap-2">
-          <ThemeLogo />
+          <Image
+            src="/logo.png"
+            alt="MTNB"
+            width={24}
+            height={24}
+            className="rounded"
+          />
           <h1 className="text-xl font-bold">MTNB</h1>
         </div>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" asChild>
-            <a
-              href="https://github.com/jjlabsio/md-to-naver-blog"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="GitHub"
-            >
-              <GitHubIcon className="h-5 w-5" />
-            </a>
-          </Button>
-          <ThemeToggle />
-        </div>
+        <Button variant="ghost" size="icon" asChild>
+          <a
+            href="https://github.com/jjlabsio/md-to-naver-blog"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="GitHub"
+          >
+            <GitHubIcon className="h-5 w-5" />
+          </a>
+        </Button>
       </header>
       <Converter />
       <footer className="pt-4 pb-2 text-center text-xs text-muted-foreground">

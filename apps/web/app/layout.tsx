@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
-import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
 const SITE_URL = "https://mtnb.dev";
@@ -40,16 +39,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ko" suppressHydrationWarning>
+    <html lang="ko">
       <body>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          storageKey="md-to-naver-blog-theme"
-        >
-          {children}
-          <Analytics />
-        </ThemeProvider>
+        {children}
+        <Analytics />
       </body>
     </html>
   );
