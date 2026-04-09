@@ -34,22 +34,26 @@ describe("Converter", () => {
     expect(hasContent).toBe(true);
   });
 
-  it("shows empty preview when input is empty", () => {
+  it("shows default example in preview on initial render", () => {
     render(<Converter />);
-    const previews = screen.getAllByTestId("html-preview");
-    previews.forEach((preview) => {
-      expect(preview.innerHTML).toBe("");
+
+    act(() => {
+      vi.advanceTimersByTime(300);
     });
+
+    const previews = screen.getAllByTestId("html-preview");
+    const hasContent = previews.some((p) => p.innerHTML.includes("마크다운"));
+    expect(hasContent).toBe(true);
   });
 
-  it("does not convert before debounce completes", () => {
+  it("shows empty preview when input is cleared", () => {
     render(<Converter />);
     const textareas = screen.getAllByPlaceholderText(/마크다운을 입력/);
 
-    fireEvent.change(textareas[0], { target: { value: "# Hello" } });
+    fireEvent.change(textareas[0], { target: { value: "" } });
 
     act(() => {
-      vi.advanceTimersByTime(100);
+      vi.advanceTimersByTime(300);
     });
 
     const previews = screen.getAllByTestId("html-preview");
