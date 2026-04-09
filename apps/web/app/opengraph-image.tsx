@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-export const alt = "네이버 블로그 마크다운 변환기 - mtnb.dev";
+export const alt = "MTNB - 네이버 블로그 마크다운 변환기";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -32,7 +32,7 @@ export default async function Image() {
             color: "#fafafa",
           }}
         >
-          mtnb.dev
+          MTNB
         </span>
       </div>
       <span
