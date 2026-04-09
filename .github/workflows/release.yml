@@ -40,11 +40,14 @@ jobs:
           if [ -z "$LAST_TAG" ]; then
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           else
-            COMMITS=$(git log "$LAST_TAG"..HEAD --oneline --grep="^feat" --grep="^fix" --grep="^perf" --grep="^refactor" --extended-regexp 2>/dev/null | head -1)
-            if [ -n "$COMMITS" ]; then
+            CHANGES=$(git diff --name-only "$LAST_TAG"..HEAD -- packages/core/src/ packages/core/package.json)
+            if [ -n "$CHANGES" ]; then
               echo "has_changes=true" >> "$GITHUB_OUTPUT"
+              echo "Changed files in core:"
+              echo "$CHANGES"
             else
               echo "has_changes=false" >> "$GITHUB_OUTPUT"
+              echo "No changes in packages/core since $LAST_TAG, skipping release"
             fi
           fi
 
