@@ -1,5 +1,17 @@
 # md-to-naver-blog
 
+## v1.2.0
+
+[compare changes](https://github.com/jjlabsio/md-to-naver-blog/compare/v1.1.1...v1.2.0)
+
+### 🚀 Enhancements
+
+- **web:** Vercel Analytics 추가 ([#8](https://github.com/jjlabsio/md-to-naver-blog/pull/8))
+
+### ❤️ Contributors
+
+- Jaejin Song ([@jjlabsio](https://github.com/jjlabsio))
+
 ## v1.1.1
 
 [compare changes](https://github.com/jjlabsio/md-to-naver-blog/compare/v1.1.0...v1.1.1)
