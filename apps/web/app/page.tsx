@@ -27,7 +27,12 @@ export default function Home() {
             height={24}
             className="rounded"
           />
-          <h1 className="text-xl font-bold">MTNB</h1>
+          <h1 className="text-xl font-bold">
+            MTNB
+            <span className="ml-1.5 text-sm font-normal text-muted-foreground">
+              Markdown to Naver Blog
+            </span>
+          </h1>
         </div>
         <Button variant="ghost" size="icon" asChild>
           <a
@@ -41,7 +46,7 @@ export default function Home() {
         </Button>
       </header>
       <Converter />
-      <footer className="pt-4 pb-2 text-center text-xs text-muted-foreground">
+      <footer className="pt-4 pb-2 text-left text-xs text-muted-foreground">
         &copy; {new Date().getFullYear()} MTNB. All rights reserved.
       </footer>
     </main>
