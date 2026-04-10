@@ -1,5 +1,17 @@
 # md-to-naver-blog
 
+## v1.4.0
+
+[compare changes](https://github.com/jjlabsio/md-to-naver-blog/compare/v1.3.0...v1.4.0)
+
+### 🚀 Enhancements
+
+- **core:** Convert()에 components 옵션 추가 ([#11](https://github.com/jjlabsio/md-to-naver-blog/pull/11))
+
+### ❤️ Contributors
+
+- Jaejin Song ([@jjlabsio](https://github.com/jjlabsio))
+
 ## v1.3.0
 
 [compare changes](https://github.com/jjlabsio/md-to-naver-blog/compare/v1.2.0...v1.3.0)
