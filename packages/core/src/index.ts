@@ -1,6 +1,24 @@
 import matter from "gray-matter";
 
-export function convert(markdown: string): { title: string; html: string } {
+export interface UrlContext {
+  type: "link" | "image";
+  raw: string;
+}
+
+export interface ConvertOptions {
+  transformUrl?: (ctx: UrlContext) => string;
+}
+
+export interface ConvertResult {
+  title: string;
+  html: string;
+  frontmatter: Record<string, unknown>;
+}
+
+export function convert(
+  markdown: string,
+  options?: ConvertOptions,
+): ConvertResult {
   const { data: frontmatter, content: rawContent } = matter(markdown);
 
   const titleMatch = rawContent.match(/^#\s+(.+)$/m);
@@ -11,7 +29,7 @@ export function convert(markdown: string): { title: string; html: string } {
   const htmlParts: string[] = [];
 
   for (const block of blocks) {
-    htmlParts.push(renderBlock(block));
+    htmlParts.push(renderBlock(block, options));
   }
 
   let html = htmlParts.join("\n");
@@ -31,7 +49,7 @@ export function convert(markdown: string): { title: string; html: string } {
     html = html.slice(0, -"\n<p>&nbsp;</p>".length);
   }
 
-  return { title, html };
+  return { title, html, frontmatter };
 }
 
 interface Block {
@@ -352,38 +370,38 @@ function parseTableRow(line: string): string[] {
     .filter((c) => c !== "");
 }
 
-function renderBlock(block: Block): string {
+function renderBlock(block: Block, options?: ConvertOptions): string {
   switch (block.type) {
     case "heading":
-      return renderHeading(block);
+      return renderHeading(block, options);
     case "paragraph":
-      return renderParagraph(block.content);
+      return renderParagraph(block.content, options);
     case "blank":
       return "<p>&nbsp;</p>";
     case "code":
       return renderCodeBlock(block);
     case "blockquote":
-      return renderBlockquote(block);
+      return renderBlockquote(block, options);
     case "ordered-list":
-      return renderOrderedList(block);
+      return renderOrderedList(block, options);
     case "unordered-list":
-      return renderUnorderedList(block);
+      return renderUnorderedList(block, options);
     case "table":
-      return renderTable(block);
+      return renderTable(block, options);
     case "hr":
       return '<hr style="border: 0; border-top: 1px solid #ddd;">';
     case "image":
-      return renderImage(block.content);
+      return renderImage(block.content, options);
     case "linked-image":
-      return renderLinkedImage(block.content);
+      return renderLinkedImage(block.content, options);
     case "hugo-figure":
-      return renderHugoFigure(block.content);
+      return renderHugoFigure(block.content, options);
     default:
       return "";
   }
 }
 
-function renderHeading(block: Block): string {
+function renderHeading(block: Block, options?: ConvertOptions): string {
   const level = block.level || 1;
   const sizes: Record<number, string> = {
     1: "2em",
@@ -394,12 +412,14 @@ function renderHeading(block: Block): string {
     6: "0.67em",
   };
   const tag = `h${level}`;
-  return `<${tag} style="font-size: ${sizes[level]}; font-weight: bold;">${processInline(block.content)}</${tag}>`;
+  return `<${tag} style="font-size: ${sizes[level]}; font-weight: bold;">${processInline(block.content, options)}</${tag}>`;
 }
 
-function renderParagraph(content: string): string {
+function renderParagraph(content: string, options?: ConvertOptions): string {
   const lines = content.split("\n");
-  const rendered = lines.map((line) => processInline(line)).join("<br>");
+  const rendered = lines
+    .map((line) => processInline(line, options))
+    .join("<br>");
   return `<p>${rendered}</p>`;
 }
 
@@ -1116,29 +1136,34 @@ function highlightYamlValue(value: string): string {
 
 // ===================== Blockquote =====================
 
-function renderBlockquote(block: Block): string {
+function renderBlockquote(block: Block, options?: ConvertOptions): string {
   const style = `border-left: 4px solid rgb(220, 53, 69); padding: 1em 1.5em; background-color: rgb(246, 248, 250); color: rgb(36, 41, 46); border-radius: 4px;`;
   const lines = block.content.split("\n");
-  const content = lines.map((l) => processInline(l)).join("<br>");
+  const content = lines.map((l) => processInline(l, options)).join("<br>");
   return `<div style="${style}">\n<p>${content}</p>\n</div>`;
 }
 
 // ===================== Lists =====================
 
-function renderOrderedList(block: Block): string {
+function renderOrderedList(block: Block, options?: ConvertOptions): string {
   if (!block.items) return "";
 
   const hasNested = block.items.some((item) => item.indent > 0);
   if (!hasNested) {
     return block.items
-      .map((item) => `<p>${item.number}. ${processInline(item.text)}</p>`)
+      .map(
+        (item) => `<p>${item.number}. ${processInline(item.text, options)}</p>`,
+      )
       .join("");
   }
 
-  return renderNestedOrderedList(block.items);
+  return renderNestedOrderedList(block.items, options);
 }
 
-function renderNestedOrderedList(items: ListItem[]): string {
+function renderNestedOrderedList(
+  items: ListItem[],
+  options?: ConvertOptions,
+): string {
   const parts: string[] = [];
   let globalCounter = 1;
   let i = 0;
@@ -1146,7 +1171,9 @@ function renderNestedOrderedList(items: ListItem[]): string {
   while (i < items.length) {
     const item = items[i];
     if (item.indent === 0) {
-      parts.push(`<p>${globalCounter}. ${processInline(item.text)}</p>`);
+      parts.push(
+        `<p>${globalCounter}. ${processInline(item.text, options)}</p>`,
+      );
       globalCounter++;
       i++;
 
@@ -1162,7 +1189,7 @@ function renderNestedOrderedList(items: ListItem[]): string {
           `<ol style="padding-left: 2em; list-style-type: decimal;">`,
         );
         for (const child of children) {
-          olParts.push(`<li>${processInline(child.text)}</li>`);
+          olParts.push(`<li>${processInline(child.text, options)}</li>`);
         }
         olParts.push(`</ol>`);
         parts.push(olParts.join("\n"));
@@ -1171,7 +1198,7 @@ function renderNestedOrderedList(items: ListItem[]): string {
         flatParts.push(`\n<p></p>`);
         for (const child of children) {
           flatParts.push(
-            `<p>${globalCounter}. ${processInline(child.text)}</p>`,
+            `<p>${globalCounter}. ${processInline(child.text, options)}</p>`,
           );
           globalCounter++;
         }
@@ -1185,27 +1212,30 @@ function renderNestedOrderedList(items: ListItem[]): string {
   return parts.join("");
 }
 
-function renderUnorderedList(block: Block): string {
+function renderUnorderedList(block: Block, options?: ConvertOptions): string {
   if (!block.items) return "";
 
   const hasNested = block.items.some((item) => item.indent > 0);
   if (!hasNested) {
     return block.items
-      .map((item) => `<p>• ${processInline(item.text)}</p>`)
+      .map((item) => `<p>• ${processInline(item.text, options)}</p>`)
       .join("");
   }
 
-  return renderNestedUnorderedList(block.items);
+  return renderNestedUnorderedList(block.items, options);
 }
 
-function renderNestedUnorderedList(items: ListItem[]): string {
+function renderNestedUnorderedList(
+  items: ListItem[],
+  options?: ConvertOptions,
+): string {
   const parts: string[] = [];
   let i = 0;
 
   while (i < items.length) {
     const item = items[i];
     if (item.indent === 0) {
-      parts.push(`<p>• ${processInline(item.text)}</p>`);
+      parts.push(`<p>• ${processInline(item.text, options)}</p>`);
       i++;
 
       const children: ListItem[] = [];
@@ -1215,9 +1245,9 @@ function renderNestedUnorderedList(items: ListItem[]): string {
       }
 
       if (children.length > 0) {
-        parts.push(renderNestedUlBlock(children, items[0].indent + 2));
+        parts.push(renderNestedUlBlock(children, items[0].indent + 2, options));
         parts.push(`\n<p></p>`);
-        flattenChildren(children, parts);
+        flattenChildren(children, parts, options);
       }
     } else {
       i++;
@@ -1227,8 +1257,11 @@ function renderNestedUnorderedList(items: ListItem[]): string {
   return parts.join("");
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function renderNestedUlBlock(children: ListItem[], baseIndent: number): string {
+function renderNestedUlBlock(
+  children: ListItem[],
+  baseIndent: number,
+  options?: ConvertOptions,
+): string {
   const lines: string[] = [];
   lines.push(`<ul style="padding-left: 2em; list-style-type: disc;">`);
 
@@ -1245,11 +1278,11 @@ function renderNestedUlBlock(children: ListItem[], baseIndent: number): string {
 
     if (subChildren.length > 0) {
       lines.push(
-        `<li>${processInline(child.text)}${renderNestedUlBlock(subChildren, child.indent + 2)}`,
+        `<li>${processInline(child.text, options)}${renderNestedUlBlock(subChildren, child.indent + 2, options)}`,
       );
       lines.push(`</li>`);
     } else {
-      lines.push(`<li>${processInline(child.text)}</li>`);
+      lines.push(`<li>${processInline(child.text, options)}</li>`);
     }
   }
 
@@ -1257,10 +1290,14 @@ function renderNestedUlBlock(children: ListItem[], baseIndent: number): string {
   return lines.join("\n");
 }
 
-function flattenChildren(children: ListItem[], parts: string[]): void {
+function flattenChildren(
+  children: ListItem[],
+  parts: string[],
+  options?: ConvertOptions,
+): void {
   for (let i = 0; i < children.length; i++) {
     const child = children[i];
-    parts.push(`<p>• ${processInline(child.text)}</p>`);
+    parts.push(`<p>• ${processInline(child.text, options)}</p>`);
 
     // Check if this child has sub-children
     const subChildren: ListItem[] = [];
@@ -1271,9 +1308,9 @@ function flattenChildren(children: ListItem[], parts: string[]): void {
     }
 
     if (subChildren.length > 0) {
-      parts.push(renderNestedUlBlock(subChildren, child.indent + 2));
+      parts.push(renderNestedUlBlock(subChildren, child.indent + 2, options));
       parts.push(`\n<p></p>`);
-      flattenChildren(subChildren, parts);
+      flattenChildren(subChildren, parts, options);
       i = j - 1; // skip sub-children in outer loop
     }
   }
@@ -1281,7 +1318,7 @@ function flattenChildren(children: ListItem[], parts: string[]): void {
 
 // ===================== Table =====================
 
-function renderTable(block: Block): string {
+function renderTable(block: Block, options?: ConvertOptions): string {
   if (!block.headerRow || !block.rows) return "";
 
   const lines: string[] = [];
@@ -1292,7 +1329,7 @@ function renderTable(block: Block): string {
   lines.push(`<tr style="border-bottom: 1px solid #ddd;">`);
   for (const cell of block.headerRow) {
     lines.push(
-      `<th style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; text-align: left;">${processInline(cell)}</th>`,
+      `<th style="border: 1px solid #ddd; padding: 8px 12px; font-weight: bold; text-align: left;">${processInline(cell, options)}</th>`,
     );
   }
   lines.push(`</tr>`);
@@ -1306,7 +1343,7 @@ function renderTable(block: Block): string {
     bodyLines.push(`${prefix}<tr style="border-bottom: 1px solid #ddd;">`);
     for (const cell of row) {
       bodyLines.push(
-        `<td style="border: 1px solid #ddd; padding: 8px 12px;">${processInline(cell)}</td>`,
+        `<td style="border: 1px solid #ddd; padding: 8px 12px;">${processInline(cell, options)}</td>`,
       );
     }
     bodyLines.push(`</tr>`);
@@ -1318,29 +1355,44 @@ function renderTable(block: Block): string {
 
 // ===================== Images =====================
 
-function renderImage(content: string): string {
+function resolveUrl(
+  url: string,
+  type: "link" | "image",
+  options?: ConvertOptions,
+): string {
+  if (options?.transformUrl) {
+    return options.transformUrl({ type, raw: url });
+  }
+  return url;
+}
+
+function renderImage(content: string, options?: ConvertOptions): string {
   const match = content.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
-  if (!match) return `<p>${processInline(content)}</p>`;
-  return `<div><img src="${match[2]}" alt="${match[1]}" style="max-width: 100%; height: auto;"></div>`;
+  if (!match) return `<p>${processInline(content, options)}</p>`;
+  const src = resolveUrl(match[2], "image", options);
+  return `<div><img src="${src}" alt="${match[1]}" style="max-width: 100%; height: auto;"></div>`;
 }
 
-function renderLinkedImage(content: string): string {
+function renderLinkedImage(content: string, options?: ConvertOptions): string {
   const match = content.match(/^\[!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\)$/);
-  if (!match) return `<p>${processInline(content)}</p>`;
-  return `<div><a href="${match[3]}"><img src="${match[2]}" alt="${match[1]}" style="max-width: 100%; height: auto;"></a></div>`;
+  if (!match) return `<p>${processInline(content, options)}</p>`;
+  const src = resolveUrl(match[2], "image", options);
+  const href = resolveUrl(match[3], "link", options);
+  return `<div><a href="${href}"><img src="${src}" alt="${match[1]}" style="max-width: 100%; height: auto;"></a></div>`;
 }
 
-function renderHugoFigure(content: string): string {
+function renderHugoFigure(content: string, options?: ConvertOptions): string {
   const match = content.match(
     /\{\{<\s*figure\s+src="([^"]+)"\s+alt="([^"]+)"\s+caption="([^"]+)"\s*>\}\}/,
   );
   if (!match) return `<p>${escapeHtml(content)}</p>`;
-  return `<div><img src="${match[1]}" alt="${match[2]}" style="max-width: 100%; height: auto;"></div><div><span class="figure-caption" style="font-size: 0.9em; background-color: #fee; padding: 4px 8px; display: inline-block; margin-top: 4px; font-style: italic;">${escapeHtml(match[3])}</span></div>`;
+  const src = resolveUrl(match[1], "image", options);
+  return `<div><img src="${src}" alt="${match[2]}" style="max-width: 100%; height: auto;"></div><div><span class="figure-caption" style="font-size: 0.9em; background-color: #fee; padding: 4px 8px; display: inline-block; margin-top: 4px; font-style: italic;">${escapeHtml(match[3])}</span></div>`;
 }
 
 // ===================== Inline Processing =====================
 
-function processInline(text: string): string {
+function processInline(text: string, options?: ConvertOptions): string {
   let result = "";
   let i = 0;
 
@@ -1361,7 +1413,7 @@ function processInline(text: string): string {
       const marker = text.slice(i, i + 3);
       const end = text.indexOf(marker, i + 3);
       if (end !== -1) {
-        const inner = processInline(text.slice(i + 3, end));
+        const inner = processInline(text.slice(i + 3, end), options);
         result += `<em style="font-style: italic;"><strong style="font-weight: bold;">${inner}</strong></em>`;
         i = end + 3;
         continue;
@@ -1372,7 +1424,7 @@ function processInline(text: string): string {
     if (text.slice(i, i + 2) === "**") {
       const end = findClosingMarker(text, i + 2, "**");
       if (end !== -1) {
-        const inner = processInline(text.slice(i + 2, end));
+        const inner = processInline(text.slice(i + 2, end), options);
         result += `<strong style="font-weight: bold;">${inner}</strong>`;
         i = end + 2;
         continue;
@@ -1383,7 +1435,7 @@ function processInline(text: string): string {
     if (text.slice(i, i + 2) === "~~") {
       const end = text.indexOf("~~", i + 2);
       if (end !== -1) {
-        const inner = processInline(text.slice(i + 2, end));
+        const inner = processInline(text.slice(i + 2, end), options);
         result += `<del>${inner}</del>`;
         i = end + 2;
         continue;
@@ -1398,7 +1450,7 @@ function processInline(text: string): string {
       const marker = text[i];
       const end = findClosingSingleMarker(text, i + 1, marker);
       if (end !== -1 && end > i + 1) {
-        const inner = processInline(text.slice(i + 1, end));
+        const inner = processInline(text.slice(i + 1, end), options);
         result += `<em style="font-style: italic;">${inner}</em>`;
         i = end + 1;
         continue;
@@ -1410,8 +1462,9 @@ function processInline(text: string): string {
       const linkMatch = text.slice(i).match(/^\[([^\]]+)\]\(([^)]+)\)/);
       if (linkMatch) {
         const [full, linkText, url] = linkMatch;
-        const inner = processInline(linkText);
-        result += `<a href="${url}" style="color: #dc3545; text-decoration: underline;">${inner}</a>`;
+        const inner = processInline(linkText, options);
+        const href = resolveUrl(url, "link", options);
+        result += `<a href="${href}" style="color: #dc3545; text-decoration: underline;">${inner}</a>`;
         i += full.length;
         continue;
       }
@@ -1422,7 +1475,8 @@ function processInline(text: string): string {
       const imgMatch = text.slice(i).match(/^!\[([^\]]*)\]\(([^)]+)\)/);
       if (imgMatch) {
         const [full, alt, src] = imgMatch;
-        result += `<img src="${src}" alt="${alt}" style="max-width: 100%; height: auto;">`;
+        const resolvedSrc = resolveUrl(src, "image", options);
+        result += `<img src="${resolvedSrc}" alt="${alt}" style="max-width: 100%; height: auto;">`;
         i += full.length;
         continue;
       }
