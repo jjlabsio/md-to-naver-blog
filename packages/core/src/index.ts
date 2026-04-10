@@ -5,8 +5,18 @@ export interface UrlContext {
   raw: string;
 }
 
+export interface ComponentProps {
+  [key: string]: string;
+}
+
+export type ComponentRenderer = (
+  props: ComponentProps,
+  children: string,
+) => string;
+
 export interface ConvertOptions {
   transformUrl?: (ctx: UrlContext) => string;
+  components?: Record<string, ComponentRenderer>;
 }
 
 export interface ConvertResult {
@@ -60,6 +70,9 @@ interface Block {
   items?: ListItem[];
   rows?: string[][];
   headerRow?: string[];
+  name?: string;
+  props?: ComponentProps;
+  children?: string;
 }
 
 interface ListItem {
@@ -247,6 +260,46 @@ function parseBlocks(lines: string[]): Block[] {
       continue;
     }
 
+    // JSX self-closing component: <ComponentName prop="value" />
+    const selfClosingMatch = line.match(
+      /^<([A-Z][A-Za-z0-9]*)(\s[^>]*)?\s*\/>/,
+    );
+    if (selfClosingMatch) {
+      const name = selfClosingMatch[1];
+      const propsStr = selfClosingMatch[2] || "";
+      const props = parseComponentProps(propsStr);
+      blocks.push({ type: "component", content: line, name, props });
+      i++;
+      continue;
+    }
+
+    // JSX component with children: <ComponentName prop="value">...</ComponentName>
+    const openingMatch = line.match(/^<([A-Z][A-Za-z0-9]*)(\s[^>]*)?>/);
+    if (openingMatch) {
+      const name = openingMatch[1];
+      const propsStr = openingMatch[2] || "";
+      const props = parseComponentProps(propsStr);
+      const closingTag = `</${name}>`;
+      const childLines: string[] = [];
+      i++;
+      while (i < lines.length) {
+        if (lines[i].trim() === closingTag) {
+          i++;
+          break;
+        }
+        childLines.push(lines[i]);
+        i++;
+      }
+      blocks.push({
+        type: "component",
+        content: line,
+        name,
+        props,
+        children: childLines.join("\n"),
+      });
+      continue;
+    }
+
     // Paragraph
     const paraLines: string[] = [];
     while (
@@ -360,7 +413,18 @@ function isBlockStart(line: string): boolean {
   if (/^\{\{</.test(line)) return true;
   if (/^\[!\[/.test(line)) return true;
   if (/^!\[/.test(line)) return true;
+  if (/^<[A-Z]/.test(line)) return true;
   return false;
+}
+
+function parseComponentProps(propsStr: string): ComponentProps {
+  const props: ComponentProps = {};
+  const regex = /(\w+)="([^"]*)"/g;
+  let match;
+  while ((match = regex.exec(propsStr)) !== null) {
+    props[match[1]] = match[2];
+  }
+  return props;
 }
 
 function parseTableRow(line: string): string[] {
@@ -396,9 +460,31 @@ function renderBlock(block: Block, options?: ConvertOptions): string {
       return renderLinkedImage(block.content, options);
     case "hugo-figure":
       return renderHugoFigure(block.content, options);
+    case "component":
+      return renderComponent(block, options);
     default:
       return "";
   }
+}
+
+function renderComponent(block: Block, options?: ConvertOptions): string {
+  const renderer = options?.components?.[block.name!];
+  const rawChildren = block.children?.trim() || "";
+  const processedChildren = rawChildren
+    ? rawChildren
+        .split("\n")
+        .map((line) => processInline(line))
+        .join("<br>")
+    : "";
+
+  if (renderer) {
+    return renderer(block.props || {}, processedChildren);
+  }
+  // Unregistered component: output children only, strip component tags
+  if (processedChildren) {
+    return `<p>${processedChildren}</p>`;
+  }
+  return "";
 }
 
 function renderHeading(block: Block, options?: ConvertOptions): string {
