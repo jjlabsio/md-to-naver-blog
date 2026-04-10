@@ -1,5 +1,18 @@
 # md-to-naver-blog
 
+## v1.3.0
+
+[compare changes](https://github.com/jjlabsio/md-to-naver-blog/compare/v1.2.0...v1.3.0)
+
+### 🚀 Enhancements
+
+- **web:** UI 개선 및 다크모드 제거 ([#9](https://github.com/jjlabsio/md-to-naver-blog/pull/9))
+- **core:** Add frontmatter return and transformUrl option ([#10](https://github.com/jjlabsio/md-to-naver-blog/pull/10))
+
+### ❤️ Contributors
+
+- Jaejin Song ([@jjlabsio](https://github.com/jjlabsio))
+
 ## v1.2.0
 
 [compare changes](https://github.com/jjlabsio/md-to-naver-blog/compare/v1.1.1...v1.2.0)
