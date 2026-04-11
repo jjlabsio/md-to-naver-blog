@@ -36,7 +36,7 @@ jobs:
       - name: Check for releasable changes
         id: check
         run: |
-          LAST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -n1)
+          LAST_TAG=$(git tag -l 'md-to-naver-blog@*' --sort=-v:refname | head -n1)
           if [ -z "$LAST_TAG" ]; then
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           else
@@ -64,7 +64,7 @@ jobs:
       - name: Commit and tag
         if: steps.check.outputs.has_changes == 'true'
         run: |
-          VERSION="v${{ steps.version.outputs.version }}"
+          VERSION="md-to-naver-blog@${{ steps.version.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
@@ -78,7 +78,7 @@ jobs:
 
       - name: Create GitHub Release
         if: steps.check.outputs.has_changes == 'true'
-        run: npx changelogen gh release
+        run: npx changelogen gh release --push md-to-naver-blog@${{ steps.version.outputs.version }}
         working-directory: packages/core
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -131,7 +131,7 @@ jobs:
       - name: Check for releasable changes
         id: check
         run: |
-          LAST_TAG=$(git tag -l 'mtnb-v*' --sort=-v:refname | head -n1)
+          LAST_TAG=$(git tag -l 'mtnb@*' --sort=-v:refname | head -n1)
           if [ -z "$LAST_TAG" ]; then
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
             echo "No previous mtnb tag found, first release"
@@ -160,7 +160,7 @@ jobs:
       - name: Commit and tag
         if: steps.check.outputs.has_changes == 'true'
         run: |
-          VERSION="mtnb-v${{ steps.version.outputs.version }}"
+          VERSION="mtnb@${{ steps.version.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
@@ -174,7 +174,7 @@ jobs:
 
       - name: Create GitHub Release
         if: steps.check.outputs.has_changes == 'true'
-        run: npx changelogen gh release --push mtnb-v${{ steps.version.outputs.version }}
+        run: npx changelogen gh release --push mtnb@${{ steps.version.outputs.version }}
         working-directory: packages/cli
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
