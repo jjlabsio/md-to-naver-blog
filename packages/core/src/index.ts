@@ -1621,3 +1621,19 @@ function findClosingSingleMarker(
   }
   return -1;
 }
+
+export function getHtmlClipboardScript(html: string): string {
+  const escaped = JSON.stringify(html);
+  return `(() => {
+  const blob = new Blob([${escaped}], { type: 'text/html' });
+  const item = new ClipboardItem({ 'text/html': blob });
+  return navigator.clipboard.write([item]);
+})()`;
+}
+
+export function getTextClipboardScript(text: string): string {
+  const escaped = JSON.stringify(text);
+  return `(() => {
+  return navigator.clipboard.writeText(${escaped});
+})()`;
+}

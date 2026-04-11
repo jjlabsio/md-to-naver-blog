@@ -45,10 +45,11 @@ console.log(html); // 네이버 블로그에 붙여넣기 가능한 HTML
 
 ### 반환값
 
-| 필드    | 타입     | 설명                                        |
-| ------- | -------- | ------------------------------------------- |
-| `title` | `string` | 첫 번째 `h1` 헤딩 텍스트                    |
-| `html`  | `string` | 네이버 블로그 에디터에 붙여넣기 가능한 HTML |
+| 필드          | 타입                      | 설명                                        |
+| ------------- | ------------------------- | ------------------------------------------- |
+| `title`       | `string`                  | 첫 번째 `h1` 헤딩 텍스트                    |
+| `html`        | `string`                  | 네이버 블로그 에디터에 붙여넣기 가능한 HTML |
+| `frontmatter` | `Record<string, unknown>` | YAML frontmatter 파싱 결과                  |
 
 ### frontmatter 지원
 
@@ -64,6 +65,45 @@ tags: [개발, 자동화]
 
 `tags`는 HTML 하단에 `#개발 #자동화` 형태로 자동 추가됩니다.
 
+### 브라우저 자동화에서 사용하기
+
+네이버 블로그 API가 폐쇄되어 있어서, 브라우저 자동화(Playwright/Puppeteer/Selenium)로 글을 올릴 때 클립보드 유틸 함수를 활용할 수 있습니다.
+
+- `getHtmlClipboardScript(html)` — `text/html`로 클립보드에 복사하는 JavaScript 코드 문자열을 반환
+- `getTextClipboardScript(text)` — `text/plain`으로 클립보드에 복사하는 JavaScript 코드 문자열을 반환
+
+```ts
+import {
+  convert,
+  getHtmlClipboardScript,
+  getTextClipboardScript,
+} from "@jjlabsio/md-to-naver-blog";
+
+const { title, html } = convert(markdown);
+
+// 본문 HTML을 클립보드에 복사
+await page.evaluate(getHtmlClipboardScript(html));
+
+// 제목을 클립보드에 복사
+await page.evaluate(getTextClipboardScript(title));
+```
+
+## CLI
+
+마크다운 파일을 변환하고 브라우저에서 미리보기를 열어 제목, 본문, 태그를 각각 서식 복사할 수 있습니다.
+
+```bash
+npm install -g @jjlabsio/mtnb
+# or
+pnpm add -g @jjlabsio/mtnb
+```
+
+```bash
+mtnb preview post.md
+```
+
+브라우저에서 미리보기 페이지가 열리고, 각 항목의 "서식 복사" 버튼을 클릭해 네이버 블로그에 붙여넣을 수 있습니다.
+
 ## 웹 앱
 
 라이브러리를 직접 쓰지 않아도 웹 앱에서 마크다운을 붙여넣고 변환된 HTML을 바로 복사할 수 있습니다.
@@ -72,14 +112,14 @@ tags: [개발, 자동화]
 
 - 실시간 미리보기
 - "서식 복사" 버튼으로 클립보드에 HTML 복사
-- 다크모드 지원
 
 ## 모노레포 구조
 
 ```
 md-to-naver-blog/
 ├── packages/
-│   └── core/       # 변환 라이브러리 (npm 배포)
+│   ├── core/       # 변환 라이브러리 (npm 배포)
+│   └── cli/        # CLI 도구 (@jjlabsio/mtnb)
 └── apps/
     └── web/        # Next.js 웹 앱 (mtnb.dev)
 ```
