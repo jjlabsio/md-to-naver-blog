@@ -35,7 +35,6 @@ function generatePreviewHtml(
       transition: all 0.15s;
     }
     .copy-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
-    .copy-btn.copied { background: #f0fdf4; border-color: #86efac; color: #166534; }
     .copy-btn svg { width: 14px; height: 14px; }
     .field-content { font-size: 15px; line-height: 1.6; }
     .preview-body { border: 1px solid #f1f5f9; border-radius: 4px; padding: 16px; max-height: 600px; overflow-y: auto; }
@@ -53,7 +52,7 @@ function generatePreviewHtml(
         <span class="field-label">제목</span>
         <button class="copy-btn" data-copy-target="title-content">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-          복사
+          서식 복사
         </button>
       </div>
       <div class="field-content" id="title-content">${title}</div>
@@ -96,7 +95,7 @@ ${
       var blob = new Blob([html], { type: 'text/html' });
       var item = new ClipboardItem({ 'text/html': blob });
       await navigator.clipboard.write([item]);
-      showCopied(btn, '서식 복사');
+      showCopied(btn);
     }
 
     async function copyText(btn) {
@@ -115,7 +114,7 @@ ${
         document.execCommand('copy');
         document.body.removeChild(textarea);
       }
-      showCopied(btn, '복사');
+      showCopied(btn);
     }
 
     document.getElementById('copy-html-btn').addEventListener('click', function() { copyHtml(this); });
@@ -123,12 +122,10 @@ ${
       btn.addEventListener('click', function() { copyText(this); });
     });
 
-    function showCopied(btn, originalLabel) {
+    function showCopied(btn) {
       btn.innerHTML = checkSvg + ' 복사됨';
-      btn.classList.add('copied');
       setTimeout(function() {
-        btn.innerHTML = copySvg + ' ' + originalLabel;
-        btn.classList.remove('copied');
+        btn.innerHTML = copySvg + ' 서식 복사';
       }, 2000);
     }
   </script>
