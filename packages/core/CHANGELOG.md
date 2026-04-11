@@ -1,5 +1,26 @@
 # md-to-naver-blog
 
+## v1.5.0
+
+[compare changes](https://github.com/jjlabsio/md-to-naver-blog/compare/v1.4.0...v1.5.0)
+
+### 🚀 Enhancements
+
+- 클립보드 유틸 함수 및 CLI preview 명령어 추가 ([#12](https://github.com/jjlabsio/md-to-naver-blog/pull/12))
+
+### 🩹 Fixes
+
+- Remove node_modules from .worktreeinclude ([b23c555](https://github.com/jjlabsio/md-to-naver-blog/commit/b23c555))
+
+### 🏡 Chore
+
+- Add .worktreeinclude for worktree setup ([6471113](https://github.com/jjlabsio/md-to-naver-blog/commit/6471113))
+
+### ❤️ Contributors
+
+- Jaejin Song ([@jjlabsio](https://github.com/jjlabsio))
+- 송재진 ([@jjlabsio](https://github.com/jjlabsio))
+
 ## v1.4.0
 
 [compare changes](https://github.com/jjlabsio/md-to-naver-blog/compare/v1.3.0...v1.4.0)
