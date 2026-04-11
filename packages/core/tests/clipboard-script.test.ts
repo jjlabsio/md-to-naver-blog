@@ -37,9 +37,9 @@ describe("getHtmlClipboardScript", () => {
 });
 
 describe("getTextClipboardScript", () => {
-  it("should include text/plain MIME type", () => {
+  it("should use clipboard.writeText", () => {
     const script = getTextClipboardScript("hello world");
-    expect(script).toContain("text/plain");
+    expect(script).toContain("clipboard.writeText");
   });
 
   it("should include the provided text content", () => {

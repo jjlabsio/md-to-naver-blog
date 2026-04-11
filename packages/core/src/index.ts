@@ -1634,8 +1634,6 @@ export function getHtmlClipboardScript(html: string): string {
 export function getTextClipboardScript(text: string): string {
   const escaped = JSON.stringify(text);
   return `(() => {
-  const blob = new Blob([${escaped}], { type: 'text/plain' });
-  const item = new ClipboardItem({ 'text/plain': blob });
-  return navigator.clipboard.write([item]);
+  return navigator.clipboard.writeText(${escaped});
 })()`;
 }
