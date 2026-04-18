@@ -1284,12 +1284,14 @@ function renderNestedOrderedList(
   return parts.join("");
 }
 
-// Naver SmartEditor ONE flattens nested <ul>s from external paste. We fake
-// visual nesting with flat <p> blocks — bullet char by depth + inline
-// padding-left. <p> inline styles survive Naver's paste normalization
-// (verified: line-height: 1.8 preserved after paste).
+// Naver SmartEditor ONE flattens nested <ul>s from external paste and
+// strips padding-left from <p> inline styles (line-height survives,
+// padding-left does not — verified in editor DOM). Fake visual nesting
+// with flat <p> blocks: bullet char by depth + leading &nbsp; run for
+// indentation. nbsp is a literal character so Naver has no rule to
+// strip it.
 const BULLET_CHARS = ["•", "○", "▪"] as const;
-const INDENT_PX_PER_LEVEL = 30;
+const NBSP_PER_LEVEL = 6; // ~30px visual indent at editor's 15px font
 
 function renderUnorderedList(block: Block, options?: ConvertOptions): string {
   if (!block.items || block.items.length === 0) return "";
@@ -1304,11 +1306,10 @@ function renderUnorderedList(block: Block, options?: ConvertOptions): string {
   for (const item of block.items) {
     const depth = depthByIndent.get(item.indent) ?? 0;
     const bullet = BULLET_CHARS[Math.min(depth, BULLET_CHARS.length - 1)];
-    const pad = depth * INDENT_PX_PER_LEVEL;
-    const padStyle = pad > 0 ? `padding-left: ${pad}px; ` : "";
+    const indent = "&nbsp;".repeat(depth * NBSP_PER_LEVEL);
     const text = processInline(item.text, options);
     lines.push(
-      `<p class="se-text-paragraph se-text-paragraph-align-left" style="${padStyle}line-height: 1.8;"><span class="se-ff-nanumgothic se-fs15 __se-node" style="color: rgb(0, 0, 0);">${bullet} ${text}</span></p>`,
+      `<p class="se-text-paragraph se-text-paragraph-align-left" style="line-height: 1.8;"><span class="se-ff-nanumgothic se-fs15 __se-node" style="color: rgb(0, 0, 0);">${indent}${bullet} ${text}</span></p>`,
     );
   }
   return lines.join("\n");
