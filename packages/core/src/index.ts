@@ -1251,16 +1251,12 @@ function renderNestedOrderedList(
   options?: ConvertOptions,
 ): string {
   const parts: string[] = [];
-  let globalCounter = 1;
   let i = 0;
 
   while (i < items.length) {
     const item = items[i];
     if (item.indent === 0) {
-      parts.push(
-        `<p>${globalCounter}. ${processInline(item.text, options)}</p>`,
-      );
-      globalCounter++;
+      parts.push(`<p>${item.number}. ${processInline(item.text, options)}</p>`);
       i++;
 
       const children: ListItem[] = [];
@@ -1279,16 +1275,6 @@ function renderNestedOrderedList(
         }
         olParts.push(`</ol>`);
         parts.push(olParts.join("\n"));
-        // \n before <p></p> so they're on separate lines
-        const flatParts: string[] = [];
-        flatParts.push(`\n<p></p>`);
-        for (const child of children) {
-          flatParts.push(
-            `<p>${globalCounter}. ${processInline(child.text, options)}</p>`,
-          );
-          globalCounter++;
-        }
-        parts.push(flatParts.join(""));
       }
     } else {
       i++;
@@ -1332,8 +1318,6 @@ function renderNestedUnorderedList(
 
       if (children.length > 0) {
         parts.push(renderNestedUlBlock(children, items[0].indent + 2, options));
-        parts.push(`\n<p></p>`);
-        flattenChildren(children, parts, options);
       }
     } else {
       i++;
@@ -1374,32 +1358,6 @@ function renderNestedUlBlock(
 
   lines.push(`</ul>`);
   return lines.join("\n");
-}
-
-function flattenChildren(
-  children: ListItem[],
-  parts: string[],
-  options?: ConvertOptions,
-): void {
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i];
-    parts.push(`<p>• ${processInline(child.text, options)}</p>`);
-
-    // Check if this child has sub-children
-    const subChildren: ListItem[] = [];
-    let j = i + 1;
-    while (j < children.length && children[j].indent > child.indent) {
-      subChildren.push(children[j]);
-      j++;
-    }
-
-    if (subChildren.length > 0) {
-      parts.push(renderNestedUlBlock(subChildren, child.indent + 2, options));
-      parts.push(`\n<p></p>`);
-      flattenChildren(subChildren, parts, options);
-      i = j - 1; // skip sub-children in outer loop
-    }
-  }
 }
 
 // ===================== Table =====================
