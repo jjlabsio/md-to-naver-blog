@@ -1560,6 +1560,15 @@ function findClosingSingleMarker(
 // SmartEditor ONE flattens nested <ul> when the clipboard payload looks
 // foreign. Transform to match the editor's own clipboard signature:
 // strip outermost bullet-disc wrappers so bare <li>s appear at the top.
+export function toNaverPasteHtml(html: string, userAgent: string): string {
+  const body = unwrapOuterBulletDisc(html);
+  const marker =
+    '<meta charset="utf-8"><span data-input-buffer="INPUT_BUFFER_DATA;' +
+    encodeURIComponent(userAgent) +
+    ';blog.naver.com"></span>';
+  return marker + body;
+}
+
 function unwrapOuterBulletDisc(html: string): string {
   const openTag = '<ul class="se-text-list se-text-list-type-bullet-disc">';
   const closeTag = "</ul>";
@@ -1605,11 +1614,11 @@ function unwrapOuterBulletDisc(html: string): string {
 }
 
 export function getHtmlClipboardScript(html: string): string {
-  const payload = unwrapOuterBulletDisc(html);
-  const escaped = JSON.stringify(payload);
+  const body = unwrapOuterBulletDisc(html);
+  const escaped = JSON.stringify(body);
   // Prepend Naver's own clipboard signature (<meta charset> +
   // data-input-buffer marker) so the paste parser treats the payload as
-  // native and keeps nested <ul> structure.
+  // native and keeps nested <ul> structure. UA is filled in at run time.
   return `(() => {
   const marker =
     '<meta charset="utf-8"><span data-input-buffer="INPUT_BUFFER_DATA;' +
