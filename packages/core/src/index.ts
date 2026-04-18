@@ -1284,13 +1284,14 @@ function renderNestedOrderedList(
   return parts.join("");
 }
 
-// Naver SmartEditor ONE flattens nested <ul>s from external paste and
-// strips padding-left from <p> inline styles (line-height survives,
-// padding-left does not — verified in editor DOM). Fake visual nesting
-// with flat <p> blocks: bullet char by depth + leading &nbsp; run for
-// indentation. nbsp is a literal character so Naver has no rule to
-// strip it.
-const BULLET_CHARS = ["•", "○", "▪"] as const;
+// Each item rendered as its own single-item <ul> with a
+// bullet-{disc|circle|square} class so Naver renders the native CSS
+// list marker (visual match to Naver's own nested lists). No <ul>
+// nesting means nothing for the paste parser to flatten. Depth
+// indentation is carried by leading &nbsp;s in the <li> text — Naver
+// strips <ul>/<p> padding-left inline styles but literal nbsp characters
+// survive.
+const BULLET_CLASSES = ["disc", "circle", "square"] as const;
 const NBSP_PER_LEVEL = 6; // ~30px visual indent at editor's 15px font
 
 function renderUnorderedList(block: Block, options?: ConvertOptions): string {
@@ -1305,11 +1306,11 @@ function renderUnorderedList(block: Block, options?: ConvertOptions): string {
   const lines: string[] = [];
   for (const item of block.items) {
     const depth = depthByIndent.get(item.indent) ?? 0;
-    const bullet = BULLET_CHARS[Math.min(depth, BULLET_CHARS.length - 1)];
+    const cls = BULLET_CLASSES[Math.min(depth, BULLET_CLASSES.length - 1)];
     const indent = "&nbsp;".repeat(depth * NBSP_PER_LEVEL);
     const text = processInline(item.text, options);
     lines.push(
-      `<p class="se-text-paragraph se-text-paragraph-align-left" style="line-height: 1.8;"><span class="se-ff-nanumgothic se-fs15 __se-node" style="color: rgb(0, 0, 0);">${indent}${bullet} ${text}</span></p>`,
+      `<ul class="se-text-list se-text-list-type-bullet-${cls}"><li class="se-text-list-item"><p class="se-text-paragraph se-text-paragraph-align-left" style="line-height: 1.8;"><span class="se-ff-nanumgothic se-fs15 __se-node" style="color: rgb(0, 0, 0);">${indent}${text}</span></p></li></ul>`,
     );
   }
   return lines.join("\n");
