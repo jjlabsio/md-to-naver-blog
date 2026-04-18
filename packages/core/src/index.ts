@@ -1284,56 +1284,33 @@ function renderNestedOrderedList(
   return parts.join("");
 }
 
-// Naver SmartEditor ONE bullet style cycle (disc → circle → square, capped).
-const BULLET_STYLES = ["disc", "circle", "square"] as const;
+// Naver SmartEditor ONE flattens nested <ul>s from external paste. We fake
+// visual nesting with flat <p> blocks — bullet char by depth + inline
+// padding-left. <p> inline styles survive Naver's paste normalization
+// (verified: line-height: 1.8 preserved after paste).
+const BULLET_CHARS = ["•", "○", "▪"] as const;
+const INDENT_PX_PER_LEVEL = 30;
 
 function renderUnorderedList(block: Block, options?: ConvertOptions): string {
   if (!block.items || block.items.length === 0) return "";
-  return renderUnorderedTree(block.items, 0, options);
-}
 
-function renderUnorderedTree(
-  items: ListItem[],
-  depth: number,
-  options?: ConvertOptions,
-): string {
-  const bullet = BULLET_STYLES[Math.min(depth, BULLET_STYLES.length - 1)];
+  const depthByIndent = new Map<number, number>();
+  const sortedIndents = Array.from(
+    new Set(block.items.map((item) => item.indent)),
+  ).sort((a, b) => a - b);
+  sortedIndents.forEach((indent, depth) => depthByIndent.set(indent, depth));
+
   const lines: string[] = [];
-  lines.push(`<ul class="se-text-list se-text-list-type-bullet-${bullet}">`);
-
-  const minIndent = items.reduce(
-    (min, item) => Math.min(min, item.indent),
-    Infinity,
-  );
-
-  let i = 0;
-  while (i < items.length) {
-    if (items[i].indent !== minIndent) {
-      i++;
-      continue;
-    }
-    const item = items[i];
-    i++;
-
-    const children: ListItem[] = [];
-    while (i < items.length && items[i].indent > minIndent) {
-      children.push(items[i]);
-      i++;
-    }
-
+  for (const item of block.items) {
+    const depth = depthByIndent.get(item.indent) ?? 0;
+    const bullet = BULLET_CHARS[Math.min(depth, BULLET_CHARS.length - 1)];
+    const pad = depth * INDENT_PX_PER_LEVEL;
+    const padStyle = pad > 0 ? `padding-left: ${pad}px; ` : "";
     const text = processInline(item.text, options);
-    const head = `<li class="se-text-list-item"><p class="se-text-paragraph se-text-paragraph-align-left" style="line-height: 1.8;"><span class="se-ff-nanumgothic se-fs15 __se-node" style="color: rgb(0, 0, 0);">${text}</span></p>`;
-
-    if (children.length > 0) {
-      lines.push(head);
-      lines.push(renderUnorderedTree(children, depth + 1, options));
-      lines.push(`</li>`);
-    } else {
-      lines.push(`${head}</li>`);
-    }
+    lines.push(
+      `<p class="se-text-paragraph se-text-paragraph-align-left" style="${padStyle}line-height: 1.8;"><span class="se-ff-nanumgothic se-fs15 __se-node" style="color: rgb(0, 0, 0);">${bullet} ${text}</span></p>`,
+    );
   }
-
-  lines.push(`</ul>`);
   return lines.join("\n");
 }
 
@@ -1557,64 +1534,14 @@ function findClosingSingleMarker(
   return -1;
 }
 
-// SmartEditor ONE's paste parser keeps nested <ul>s only when the payload
-// looks like it was copied from inside a Naver list (bare <li>s at the
-// top, not wrapped in an outer <ul>). Strip the outermost bullet-disc
-// wrapper to match that shape. We deliberately do NOT inject Naver's
-// data-input-buffer span: that marker tells Naver to ignore the
-// clipboard and fetch its own internal input buffer instead, which
-// results in whatever the user last copied inside Naver editor being
-// pasted regardless of our actual content.
+// Identity transform kept for API stability; the rendered HTML already
+// uses flat <p> blocks that survive SmartEditor ONE's paste normalization.
 export function toNaverPasteHtml(html: string): string {
-  return unwrapOuterBulletDisc(html);
-}
-
-function unwrapOuterBulletDisc(html: string): string {
-  const openTag = '<ul class="se-text-list se-text-list-type-bullet-disc">';
-  const closeTag = "</ul>";
-  let out = "";
-  let i = 0;
-  while (i < html.length) {
-    const openIdx = html.indexOf(openTag, i);
-    if (openIdx === -1) {
-      out += html.slice(i);
-      break;
-    }
-    out += html.slice(i, openIdx);
-    let depth = 1;
-    let j = openIdx + openTag.length;
-    let matchedCloseIdx = -1;
-    while (j < html.length && depth > 0) {
-      const nextOpen = html.indexOf("<ul", j);
-      const nextClose = html.indexOf(closeTag, j);
-      if (nextClose === -1) break;
-      if (nextOpen !== -1 && nextOpen < nextClose) {
-        depth++;
-        j = nextOpen + 3;
-      } else {
-        depth--;
-        if (depth === 0) {
-          matchedCloseIdx = nextClose;
-          break;
-        }
-        j = nextClose + closeTag.length;
-      }
-    }
-    if (matchedCloseIdx === -1) {
-      out += html.slice(openIdx);
-      break;
-    }
-    let inner = html.slice(openIdx + openTag.length, matchedCloseIdx);
-    if (inner.startsWith("\n")) inner = inner.slice(1);
-    if (inner.endsWith("\n")) inner = inner.slice(0, -1);
-    out += inner;
-    i = matchedCloseIdx + closeTag.length;
-  }
-  return out;
+  return html;
 }
 
 export function getHtmlClipboardScript(html: string): string {
-  const escaped = JSON.stringify(toNaverPasteHtml(html));
+  const escaped = JSON.stringify(html);
   return `(() => {
   const blob = new Blob([${escaped}], { type: 'text/html' });
   const item = new ClipboardItem({ 'text/html': blob });
