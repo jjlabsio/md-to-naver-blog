@@ -1289,26 +1289,17 @@ const BULLET_STYLES = ["disc", "circle", "square"] as const;
 
 function renderUnorderedList(block: Block, options?: ConvertOptions): string {
   if (!block.items || block.items.length === 0) return "";
-  return renderUnorderedTree(block.items, 0, true, options);
+  return renderUnorderedTree(block.items, 0, options);
 }
 
 function renderUnorderedTree(
   items: ListItem[],
   depth: number,
-  isTop: boolean,
   options?: ConvertOptions,
 ): string {
   const bullet = BULLET_STYLES[Math.min(depth, BULLET_STYLES.length - 1)];
-  const styleParts = [
-    "padding-left: 30px",
-    `list-style-type: ${bullet}`,
-    "list-style-position: outside",
-  ];
-  if (isTop) styleParts.push("margin-left: -14px");
-  const ulAttrs = `class="se-text-list se-text-list-type-bullet-${bullet}" style="${styleParts.join("; ")};"`;
-
   const lines: string[] = [];
-  lines.push(`<ul ${ulAttrs}>`);
+  lines.push(`<ul class="se-text-list se-text-list-type-bullet-${bullet}">`);
 
   const minIndent = items.reduce(
     (min, item) => Math.min(min, item.indent),
@@ -1331,11 +1322,11 @@ function renderUnorderedTree(
     }
 
     const text = processInline(item.text, options);
-    const head = `<li class="se-text-list-item"><p class="se-text-paragraph se-text-paragraph-align- "><span class="se-fs- se-ff-   ">${text}</span></p>`;
+    const head = `<li class="se-text-list-item"><p class="se-text-paragraph se-text-paragraph-align-left" style="line-height: 1.8;"><span class="se-ff-nanumgothic se-fs15 __se-node" style="color: rgb(0, 0, 0);">${text}</span></p>`;
 
     if (children.length > 0) {
       lines.push(head);
-      lines.push(renderUnorderedTree(children, depth + 1, false, options));
+      lines.push(renderUnorderedTree(children, depth + 1, options));
       lines.push(`</li>`);
     } else {
       lines.push(`${head}</li>`);
