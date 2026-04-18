@@ -1557,16 +1557,16 @@ function findClosingSingleMarker(
   return -1;
 }
 
-// SmartEditor ONE flattens nested <ul> when the clipboard payload looks
-// foreign. Transform to match the editor's own clipboard signature:
-// strip outermost bullet-disc wrappers so bare <li>s appear at the top.
-export function toNaverPasteHtml(html: string, userAgent: string): string {
-  const body = unwrapOuterBulletDisc(html);
-  const marker =
-    '<meta charset="utf-8"><span data-input-buffer="INPUT_BUFFER_DATA;' +
-    encodeURIComponent(userAgent) +
-    ';blog.naver.com"></span>';
-  return marker + body;
+// SmartEditor ONE's paste parser keeps nested <ul>s only when the payload
+// looks like it was copied from inside a Naver list (bare <li>s at the
+// top, not wrapped in an outer <ul>). Strip the outermost bullet-disc
+// wrapper to match that shape. We deliberately do NOT inject Naver's
+// data-input-buffer span: that marker tells Naver to ignore the
+// clipboard and fetch its own internal input buffer instead, which
+// results in whatever the user last copied inside Naver editor being
+// pasted regardless of our actual content.
+export function toNaverPasteHtml(html: string): string {
+  return unwrapOuterBulletDisc(html);
 }
 
 function unwrapOuterBulletDisc(html: string): string {
@@ -1614,17 +1614,9 @@ function unwrapOuterBulletDisc(html: string): string {
 }
 
 export function getHtmlClipboardScript(html: string): string {
-  const body = unwrapOuterBulletDisc(html);
-  const escaped = JSON.stringify(body);
-  // Prepend Naver's own clipboard signature (<meta charset> +
-  // data-input-buffer marker) so the paste parser treats the payload as
-  // native and keeps nested <ul> structure. UA is filled in at run time.
+  const escaped = JSON.stringify(toNaverPasteHtml(html));
   return `(() => {
-  const marker =
-    '<meta charset="utf-8"><span data-input-buffer="INPUT_BUFFER_DATA;' +
-    encodeURIComponent(navigator.userAgent) +
-    ';blog.naver.com"></span>';
-  const blob = new Blob([marker + ${escaped}], { type: 'text/html' });
+  const blob = new Blob([${escaped}], { type: 'text/html' });
   const item = new ClipboardItem({ 'text/html': blob });
   return navigator.clipboard.write([item]);
 })()`;

@@ -5,7 +5,7 @@ export async function copyHtmlToClipboard(html: string): Promise<boolean> {
     if (!navigator.clipboard) {
       return false;
     }
-    const payload = toNaverPasteHtml(html, navigator.userAgent);
+    const payload = toNaverPasteHtml(html);
     const blob = new Blob([payload], { type: "text/html" });
     const item = new ClipboardItem({ "text/html": blob });
     await navigator.clipboard.write([item]);
