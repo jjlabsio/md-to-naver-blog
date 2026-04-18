@@ -1309,8 +1309,9 @@ function renderUnorderedList(block: Block, options?: ConvertOptions): string {
     const cls = BULLET_CLASSES[Math.min(depth, BULLET_CLASSES.length - 1)];
     const indent = "&nbsp;".repeat(depth * NBSP_PER_LEVEL);
     const text = processInline(item.text, options);
+    const marginStyle = depth > 0 ? ` margin-left: ${depth * 30}px;` : "";
     lines.push(
-      `<ul class="se-text-list se-text-list-type-bullet-${cls}" style="list-style-type: ${cls};"><li class="se-text-list-item"><p class="se-text-paragraph se-text-paragraph-align-left" style="line-height: 1.8;"><span class="se-ff-nanumgothic se-fs15 __se-node" style="color: rgb(0, 0, 0);">${indent}${text}</span></p></li></ul>`,
+      `<ul class="se-text-list se-text-list-type-bullet-${cls}" style="list-style-type: ${cls};${marginStyle}"><li class="se-text-list-item"><p class="se-text-paragraph se-text-paragraph-align-left" style="line-height: 1.8;"><span class="se-ff-nanumgothic se-fs15 __se-node" style="color: rgb(0, 0, 0);">${indent}${text}</span></p></li></ul>`,
     );
   }
   return lines.join("\n");
