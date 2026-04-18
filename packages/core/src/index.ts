@@ -1557,10 +1557,65 @@ function findClosingSingleMarker(
   return -1;
 }
 
+// SmartEditor ONE flattens nested <ul> when the clipboard payload looks
+// foreign. Transform to match the editor's own clipboard signature:
+// strip outermost bullet-disc wrappers so bare <li>s appear at the top.
+function unwrapOuterBulletDisc(html: string): string {
+  const openTag = '<ul class="se-text-list se-text-list-type-bullet-disc">';
+  const closeTag = "</ul>";
+  let out = "";
+  let i = 0;
+  while (i < html.length) {
+    const openIdx = html.indexOf(openTag, i);
+    if (openIdx === -1) {
+      out += html.slice(i);
+      break;
+    }
+    out += html.slice(i, openIdx);
+    let depth = 1;
+    let j = openIdx + openTag.length;
+    let matchedCloseIdx = -1;
+    while (j < html.length && depth > 0) {
+      const nextOpen = html.indexOf("<ul", j);
+      const nextClose = html.indexOf(closeTag, j);
+      if (nextClose === -1) break;
+      if (nextOpen !== -1 && nextOpen < nextClose) {
+        depth++;
+        j = nextOpen + 3;
+      } else {
+        depth--;
+        if (depth === 0) {
+          matchedCloseIdx = nextClose;
+          break;
+        }
+        j = nextClose + closeTag.length;
+      }
+    }
+    if (matchedCloseIdx === -1) {
+      out += html.slice(openIdx);
+      break;
+    }
+    let inner = html.slice(openIdx + openTag.length, matchedCloseIdx);
+    if (inner.startsWith("\n")) inner = inner.slice(1);
+    if (inner.endsWith("\n")) inner = inner.slice(0, -1);
+    out += inner;
+    i = matchedCloseIdx + closeTag.length;
+  }
+  return out;
+}
+
 export function getHtmlClipboardScript(html: string): string {
-  const escaped = JSON.stringify(html);
+  const payload = unwrapOuterBulletDisc(html);
+  const escaped = JSON.stringify(payload);
+  // Prepend Naver's own clipboard signature (<meta charset> +
+  // data-input-buffer marker) so the paste parser treats the payload as
+  // native and keeps nested <ul> structure.
   return `(() => {
-  const blob = new Blob([${escaped}], { type: 'text/html' });
+  const marker =
+    '<meta charset="utf-8"><span data-input-buffer="INPUT_BUFFER_DATA;' +
+    encodeURIComponent(navigator.userAgent) +
+    ';blog.naver.com"></span>';
+  const blob = new Blob([marker + ${escaped}], { type: 'text/html' });
   const item = new ClipboardItem({ 'text/html': blob });
   return navigator.clipboard.write([item]);
 })()`;
