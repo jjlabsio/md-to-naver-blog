@@ -1284,75 +1284,61 @@ function renderNestedOrderedList(
   return parts.join("");
 }
 
+// Naver SmartEditor ONE bullet style cycle (disc → circle → square, capped).
+const BULLET_STYLES = ["disc", "circle", "square"] as const;
+
 function renderUnorderedList(block: Block, options?: ConvertOptions): string {
-  if (!block.items) return "";
-
-  const hasNested = block.items.some((item) => item.indent > 0);
-  if (!hasNested) {
-    return block.items
-      .map((item) => `<p>• ${processInline(item.text, options)}</p>`)
-      .join("");
-  }
-
-  return renderNestedUnorderedList(block.items, options);
+  if (!block.items || block.items.length === 0) return "";
+  return renderUnorderedTree(block.items, 0, true, options);
 }
 
-function renderNestedUnorderedList(
+function renderUnorderedTree(
   items: ListItem[],
+  depth: number,
+  isTop: boolean,
   options?: ConvertOptions,
 ): string {
-  const parts: string[] = [];
-  let i = 0;
+  const bullet = BULLET_STYLES[Math.min(depth, BULLET_STYLES.length - 1)];
+  const styleParts = [
+    "padding-left: 30px",
+    `list-style-type: ${bullet}`,
+    "list-style-position: outside",
+  ];
+  if (isTop) styleParts.push("margin-left: -14px");
+  const ulAttrs = `class="se-text-list se-text-list-type-bullet-${bullet}" style="${styleParts.join("; ")};"`;
 
-  while (i < items.length) {
-    const item = items[i];
-    if (item.indent === 0) {
-      parts.push(`<p>• ${processInline(item.text, options)}</p>`);
-      i++;
-
-      const children: ListItem[] = [];
-      while (i < items.length && items[i].indent > 0) {
-        children.push(items[i]);
-        i++;
-      }
-
-      if (children.length > 0) {
-        parts.push(renderNestedUlBlock(children, items[0].indent + 2, options));
-      }
-    } else {
-      i++;
-    }
-  }
-
-  return parts.join("");
-}
-
-function renderNestedUlBlock(
-  children: ListItem[],
-  baseIndent: number,
-  options?: ConvertOptions,
-): string {
   const lines: string[] = [];
-  lines.push(`<ul style="padding-left: 2em; list-style-type: disc;">`);
+  lines.push(`<ul ${ulAttrs}>`);
+
+  const minIndent = items.reduce(
+    (min, item) => Math.min(min, item.indent),
+    Infinity,
+  );
 
   let i = 0;
-  while (i < children.length) {
-    const child = children[i];
-    // Collect sub-children
-    const subChildren: ListItem[] = [];
+  while (i < items.length) {
+    if (items[i].indent !== minIndent) {
+      i++;
+      continue;
+    }
+    const item = items[i];
     i++;
-    while (i < children.length && children[i].indent > child.indent) {
-      subChildren.push(children[i]);
+
+    const children: ListItem[] = [];
+    while (i < items.length && items[i].indent > minIndent) {
+      children.push(items[i]);
       i++;
     }
 
-    if (subChildren.length > 0) {
-      lines.push(
-        `<li>${processInline(child.text, options)}${renderNestedUlBlock(subChildren, child.indent + 2, options)}`,
-      );
+    const text = processInline(item.text, options);
+    const head = `<li class="se-text-list-item"><p class="se-text-paragraph se-text-paragraph-align- "><span class="se-fs- se-ff-   ">${text}</span></p>`;
+
+    if (children.length > 0) {
+      lines.push(head);
+      lines.push(renderUnorderedTree(children, depth + 1, false, options));
       lines.push(`</li>`);
     } else {
-      lines.push(`<li>${processInline(child.text, options)}</li>`);
+      lines.push(`${head}</li>`);
     }
   }
 
