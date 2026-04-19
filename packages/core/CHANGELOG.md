@@ -1,5 +1,17 @@
 # md-to-naver-blog
 
+## v1.5.3
+
+[compare changes](https://github.com/jjlabsio/md-to-naver-blog/compare/v1.5.2...v1.5.3)
+
+### 🔥 Performance
+
+- **web:** Worker + block diff로 타이핑 렉 해소 + parseBlocks 무한루프 수정 ([#17](https://github.com/jjlabsio/md-to-naver-blog/pull/17))
+
+### ❤️ Contributors
+
+- Jaejin Song ([@jjlabsio](https://github.com/jjlabsio))
+
 ## v1.5.2
 
 [compare changes](https://github.com/jjlabsio/md-to-naver-blog/compare/v1.5.1...v1.5.2)
