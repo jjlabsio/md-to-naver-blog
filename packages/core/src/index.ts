@@ -1232,174 +1232,59 @@ function renderBlockquote(block: Block, options?: ConvertOptions): string {
 // ===================== Lists =====================
 
 function renderOrderedList(block: Block, options?: ConvertOptions): string {
-  if (!block.items) return "";
+  if (!block.items || block.items.length === 0) return "";
 
-  const hasNested = block.items.some((item) => item.indent > 0);
-  if (!hasNested) {
-    return block.items
-      .map(
-        (item) => `<p>${item.number}. ${processInline(item.text, options)}</p>`,
-      )
-      .join("");
-  }
+  const depthByIndent = new Map<number, number>();
+  const sortedIndents = Array.from(
+    new Set(block.items.map((item) => item.indent)),
+  ).sort((a, b) => a - b);
+  sortedIndents.forEach((indent, depth) => depthByIndent.set(indent, depth));
 
-  return renderNestedOrderedList(block.items, options);
-}
-
-function renderNestedOrderedList(
-  items: ListItem[],
-  options?: ConvertOptions,
-): string {
-  const parts: string[] = [];
-  let globalCounter = 1;
-  let i = 0;
-
-  while (i < items.length) {
-    const item = items[i];
-    if (item.indent === 0) {
-      parts.push(
-        `<p>${globalCounter}. ${processInline(item.text, options)}</p>`,
-      );
-      globalCounter++;
-      i++;
-
-      const children: ListItem[] = [];
-      while (i < items.length && items[i].indent > 0) {
-        children.push(items[i]);
-        i++;
-      }
-
-      if (children.length > 0) {
-        const olParts: string[] = [];
-        olParts.push(
-          `<ol style="padding-left: 2em; list-style-type: decimal;">`,
-        );
-        for (const child of children) {
-          olParts.push(`<li>${processInline(child.text, options)}</li>`);
-        }
-        olParts.push(`</ol>`);
-        parts.push(olParts.join("\n"));
-        // \n before <p></p> so they're on separate lines
-        const flatParts: string[] = [];
-        flatParts.push(`\n<p></p>`);
-        for (const child of children) {
-          flatParts.push(
-            `<p>${globalCounter}. ${processInline(child.text, options)}</p>`,
-          );
-          globalCounter++;
-        }
-        parts.push(flatParts.join(""));
-      }
-    } else {
-      i++;
-    }
-  }
-
-  return parts.join("");
-}
-
-function renderUnorderedList(block: Block, options?: ConvertOptions): string {
-  if (!block.items) return "";
-
-  const hasNested = block.items.some((item) => item.indent > 0);
-  if (!hasNested) {
-    return block.items
-      .map((item) => `<p>• ${processInline(item.text, options)}</p>`)
-      .join("");
-  }
-
-  return renderNestedUnorderedList(block.items, options);
-}
-
-function renderNestedUnorderedList(
-  items: ListItem[],
-  options?: ConvertOptions,
-): string {
-  const parts: string[] = [];
-  let i = 0;
-
-  while (i < items.length) {
-    const item = items[i];
-    if (item.indent === 0) {
-      parts.push(`<p>• ${processInline(item.text, options)}</p>`);
-      i++;
-
-      const children: ListItem[] = [];
-      while (i < items.length && items[i].indent > 0) {
-        children.push(items[i]);
-        i++;
-      }
-
-      if (children.length > 0) {
-        parts.push(renderNestedUlBlock(children, items[0].indent + 2, options));
-        parts.push(`\n<p></p>`);
-        flattenChildren(children, parts, options);
-      }
-    } else {
-      i++;
-    }
-  }
-
-  return parts.join("");
-}
-
-function renderNestedUlBlock(
-  children: ListItem[],
-  baseIndent: number,
-  options?: ConvertOptions,
-): string {
   const lines: string[] = [];
-  lines.push(`<ul style="padding-left: 2em; list-style-type: disc;">`);
-
-  let i = 0;
-  while (i < children.length) {
-    const child = children[i];
-    // Collect sub-children
-    const subChildren: ListItem[] = [];
-    i++;
-    while (i < children.length && children[i].indent > child.indent) {
-      subChildren.push(children[i]);
-      i++;
-    }
-
-    if (subChildren.length > 0) {
-      lines.push(
-        `<li>${processInline(child.text, options)}${renderNestedUlBlock(subChildren, child.indent + 2, options)}`,
-      );
-      lines.push(`</li>`);
-    } else {
-      lines.push(`<li>${processInline(child.text, options)}</li>`);
-    }
+  for (const item of block.items) {
+    const depth = depthByIndent.get(item.indent) ?? 0;
+    const indent = "&nbsp;".repeat(depth * NBSP_PER_LEVEL);
+    const text = processInline(item.text, options);
+    lines.push(
+      `<p class="se-text-paragraph se-text-paragraph-align-left" style="line-height: 1.8;"><span class="se-ff-nanumgothic se-fs15 __se-node" style="color: rgb(0, 0, 0);">${indent}${item.number}. ${text}</span></p>`,
+    );
   }
-
-  lines.push(`</ul>`);
   return lines.join("\n");
 }
 
-function flattenChildren(
-  children: ListItem[],
-  parts: string[],
-  options?: ConvertOptions,
-): void {
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i];
-    parts.push(`<p>• ${processInline(child.text, options)}</p>`);
+// Flat <p> blocks with literal bullet characters + leading &nbsp; run.
+// This is the only way to get whole-line stepping (marker + text
+// together) in Naver paste — Naver strips inline margin/padding from
+// <ul> and <p>, but literal characters always survive. Result most
+// closely resembles Naver's native nested list visual.
+const BULLET_CHARS = ["•", "◦", "▪"] as const;
+const NBSP_PER_LEVEL = 6; // ~30px visual indent at editor's 15px font
 
-    // Check if this child has sub-children
-    const subChildren: ListItem[] = [];
-    let j = i + 1;
-    while (j < children.length && children[j].indent > child.indent) {
-      subChildren.push(children[j]);
-      j++;
-    }
+function renderUnorderedList(block: Block, options?: ConvertOptions): string {
+  if (!block.items || block.items.length === 0) return "";
 
-    if (subChildren.length > 0) {
-      parts.push(renderNestedUlBlock(subChildren, child.indent + 2, options));
-      parts.push(`\n<p></p>`);
-      flattenChildren(subChildren, parts, options);
-      i = j - 1; // skip sub-children in outer loop
-    }
+  const depthByIndent = new Map<number, number>();
+  const sortedIndents = Array.from(
+    new Set(block.items.map((item) => item.indent)),
+  ).sort((a, b) => a - b);
+  sortedIndents.forEach((indent, depth) => depthByIndent.set(indent, depth));
+
+  const lines: string[] = [];
+  for (const item of block.items) {
+    const depth = depthByIndent.get(item.indent) ?? 0;
+    const bulletChar = BULLET_CHARS[Math.min(depth, BULLET_CHARS.length - 1)];
+    // depth 2+ (▪)는 Naver CSS square보다 커 보여서 0.7em으로 축소 시도
+    const bullet =
+      bulletChar === "▪"
+        ? `<span style="font-size: 0.7em;">${bulletChar}</span>`
+        : bulletChar;
+    const indent = "&nbsp;".repeat(depth * NBSP_PER_LEVEL);
+    const text = processInline(item.text, options);
+    lines.push(
+      `<p class="se-text-paragraph se-text-paragraph-align-left" style="line-height: 1.8;"><span class="se-ff-nanumgothic se-fs15 __se-node" style="color: rgb(0, 0, 0);">${indent}${bullet} ${text}</span></p>`,
+    );
   }
+  return lines.join("\n");
 }
 
 // ===================== Table =====================
@@ -1620,6 +1505,12 @@ function findClosingSingleMarker(
     i++;
   }
   return -1;
+}
+
+// Identity transform kept for API stability; the rendered HTML already
+// uses flat <p> blocks that survive SmartEditor ONE's paste normalization.
+export function toNaverPasteHtml(html: string): string {
+  return html;
 }
 
 export function getHtmlClipboardScript(html: string): string {

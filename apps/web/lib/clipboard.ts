@@ -1,9 +1,12 @@
+import { toNaverPasteHtml } from "@jjlabsio/md-to-naver-blog";
+
 export async function copyHtmlToClipboard(html: string): Promise<boolean> {
   try {
     if (!navigator.clipboard) {
       return false;
     }
-    const blob = new Blob([html], { type: "text/html" });
+    const payload = toNaverPasteHtml(html);
+    const blob = new Blob([payload], { type: "text/html" });
     const item = new ClipboardItem({ "text/html": blob });
     await navigator.clipboard.write([item]);
     return true;

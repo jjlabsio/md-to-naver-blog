@@ -1,0 +1,78 @@
+<!--
+Source: https://blog.naver.com/songjj77/224257075290
+Captured: 2026-04-18
+작성자가 네이버 블로그 SmartEditor ONE에 아래 중첩 불릿 리스트를 직접 입력해 발행:
+
+- 불릿1
+- 불릿1
+  - 불릿2
+  - 불릿2
+    - 불릿3
+    - 불릿3
+
+아래는 PostView 렌더러가 실제로 출력하는 HTML 원본(주변 se-component 래퍼 포함).
+이 포맷을 기준으로 convert()의 중첩 리스트 렌더러를 맞춘다.
+
+핵심 구조
+- <ul class="se-text-list se-text-list-type-bullet-{disc|circle|square}">
+- <li class="se-text-list-item">
+- <p class="se-text-paragraph se-text-paragraph-align- ">
+- <span class="se-fs- se-ff-   ">...</span>
+- 중첩 <ul>은 <li> 내부, <p> 뒤에 위치
+
+depth별 bullet 클래스
+- depth 1: bullet-disc  (list-style-type: disc,  ●)
+- depth 2: bullet-circle(list-style-type: circle, ○)
+- depth 3: bullet-square(list-style-type: square, ■)
+
+주요 computed style
+- ul: padding-left: 30px; list-style-position: outside
+- 최상위 ul: margin-left: -14px (텍스트 정렬 보정)
+- 중첩 ul: margin-left: 0
+- li: padding 0, margin 0
+-->
+
+<div class="se-component se-text se-l-default" id="SE-7d70030f-121e-4a10-a79a-58d4cb81c00c">
+    <div class="se-component-content">
+        <div class="se-section se-section-text se-l-default">
+            <div class="se-module se-module-text">
+                <ul class="se-text-list se-text-list-type-bullet-disc">
+                    <li class="se-text-list-item">
+                        <p class="se-text-paragraph se-text-paragraph-align- " style="" id="SE-5e00fc52-71f7-493f-92f3-5ad66075b622">
+                            <span style="" class="se-fs- se-ff-   " id="SE-c0b227db-0ded-4439-8150-ef6c26015489">불릿1</span>
+                        </p>
+                    </li>
+                    <li class="se-text-list-item">
+                        <p class="se-text-paragraph se-text-paragraph-align- " style="" id="SE-33166ac8-e1d2-4471-a183-976fe9672fbe">
+                            <span style="" class="se-fs- se-ff-   " id="SE-63f897d7-fca1-45d0-b1e2-f5f0ee8e17b3">불릿1</span>
+                        </p>
+                        <ul class="se-text-list se-text-list-type-bullet-circle">
+                            <li class="se-text-list-item">
+                                <p class="se-text-paragraph se-text-paragraph-align- " style="" id="SE-03cabe75-b6cc-4de6-a124-caf49db27d08">
+                                    <span style="" class="se-fs- se-ff-   " id="SE-d2899f54-58dc-4f3d-9c47-044cb5b492f5">불릿2</span>
+                                </p>
+                            </li>
+                            <li class="se-text-list-item">
+                                <p class="se-text-paragraph se-text-paragraph-align- " style="" id="SE-f40bd1a6-f6eb-48ea-b0ac-7249a57df633">
+                                    <span style="" class="se-fs- se-ff-   " id="SE-b731e5f8-c4e5-4f61-9a3d-5b0ddaaa4c0b">불릿2</span>
+                                </p>
+                                <ul class="se-text-list se-text-list-type-bullet-square">
+                                    <li class="se-text-list-item">
+                                        <p class="se-text-paragraph se-text-paragraph-align- " style="" id="SE-836eb95a-70b2-4f31-be33-44ce93657dc3">
+                                            <span style="" class="se-fs- se-ff-   " id="SE-1bb4bdc5-c22f-4384-8fa9-2f19677ea909">불릿3</span>
+                                        </p>
+                                    </li>
+                                    <li class="se-text-list-item">
+                                        <p class="se-text-paragraph se-text-paragraph-align- " style="" id="SE-03cd9552-a468-4720-bf69-ab4393af6e04">
+                                            <span style="" class="se-fs- se-ff-   " id="SE-e2422c3c-ffcd-4fd4-959a-8f593e0852b4">불릿3</span>
+                                        </p>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
