@@ -1232,56 +1232,24 @@ function renderBlockquote(block: Block, options?: ConvertOptions): string {
 // ===================== Lists =====================
 
 function renderOrderedList(block: Block, options?: ConvertOptions): string {
-  if (!block.items) return "";
+  if (!block.items || block.items.length === 0) return "";
 
-  const hasNested = block.items.some((item) => item.indent > 0);
-  if (!hasNested) {
-    return block.items
-      .map(
-        (item) => `<p>${item.number}. ${processInline(item.text, options)}</p>`,
-      )
-      .join("");
+  const depthByIndent = new Map<number, number>();
+  const sortedIndents = Array.from(
+    new Set(block.items.map((item) => item.indent)),
+  ).sort((a, b) => a - b);
+  sortedIndents.forEach((indent, depth) => depthByIndent.set(indent, depth));
+
+  const lines: string[] = [];
+  for (const item of block.items) {
+    const depth = depthByIndent.get(item.indent) ?? 0;
+    const indent = "&nbsp;".repeat(depth * NBSP_PER_LEVEL);
+    const text = processInline(item.text, options);
+    lines.push(
+      `<p class="se-text-paragraph se-text-paragraph-align-left" style="line-height: 1.8;"><span class="se-ff-nanumgothic se-fs15 __se-node" style="color: rgb(0, 0, 0);">${indent}${item.number}. ${text}</span></p>`,
+    );
   }
-
-  return renderNestedOrderedList(block.items, options);
-}
-
-function renderNestedOrderedList(
-  items: ListItem[],
-  options?: ConvertOptions,
-): string {
-  const parts: string[] = [];
-  let i = 0;
-
-  while (i < items.length) {
-    const item = items[i];
-    if (item.indent === 0) {
-      parts.push(`<p>${item.number}. ${processInline(item.text, options)}</p>`);
-      i++;
-
-      const children: ListItem[] = [];
-      while (i < items.length && items[i].indent > 0) {
-        children.push(items[i]);
-        i++;
-      }
-
-      if (children.length > 0) {
-        const olParts: string[] = [];
-        olParts.push(
-          `<ol style="padding-left: 2em; list-style-type: decimal;">`,
-        );
-        for (const child of children) {
-          olParts.push(`<li>${processInline(child.text, options)}</li>`);
-        }
-        olParts.push(`</ol>`);
-        parts.push(olParts.join("\n"));
-      }
-    } else {
-      i++;
-    }
-  }
-
-  return parts.join("");
+  return lines.join("\n");
 }
 
 // Flat <p> blocks with literal bullet characters + leading &nbsp; run.
