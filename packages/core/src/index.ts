@@ -227,8 +227,8 @@ function parseBlocks(lines: string[]): Block[] {
       continue;
     }
 
-    // Unordered list
-    if (/^(\s*)[-*+]\s/.test(line)) {
+    // Unordered list (require item content so "- " alone falls through to paragraph)
+    if (/^(\s*)[-*+]\s(.+)$/.test(line)) {
       const listItems: ListItem[] = [];
       while (i < lines.length) {
         const ll = lines[i];
@@ -250,8 +250,8 @@ function parseBlocks(lines: string[]): Block[] {
       continue;
     }
 
-    // Ordered list (with potential code blocks inside)
-    if (/^(\s*)\d+\.\s/.test(line)) {
+    // Ordered list (require item content so "1. " alone falls through to paragraph)
+    if (/^(\s*)\d+\.\s(.+)$/.test(line)) {
       // Check if this is a "list with code" pattern (loose list with code blocks)
       // Peek ahead to see if there are indented code blocks
       const isLooseList = hasLooseListPattern(lines, i);
@@ -367,8 +367,9 @@ function parseBlocks(lines: string[]): Block[] {
       continue;
     }
 
-    // Paragraph
-    const paraLines: string[] = [];
+    // Paragraph (always consume at least the current line to guarantee progress)
+    const paraLines: string[] = [lines[i]];
+    i++;
     while (
       i < lines.length &&
       lines[i].trim() !== "" &&
@@ -377,9 +378,7 @@ function parseBlocks(lines: string[]): Block[] {
       paraLines.push(lines[i]);
       i++;
     }
-    if (paraLines.length > 0) {
-      blocks.push({ type: "paragraph", content: paraLines.join("\n") });
-    }
+    blocks.push({ type: "paragraph", content: paraLines.join("\n") });
   }
 
   return blocks;

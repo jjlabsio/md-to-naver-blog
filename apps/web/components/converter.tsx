@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  startTransition,
-  useCallback,
-  useDeferredValue,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useDeferredValue, useRef, useState } from "react";
 import { Eraser } from "lucide-react";
 import { MarkdownInput } from "@/components/markdown-input";
 import { HtmlPreview } from "@/components/html-preview";
@@ -31,12 +25,12 @@ export function Converter() {
   const { blocks, html } = useConverter(deferredMarkdown);
 
   const handleValue = useCallback((value: string) => {
-    startTransition(() => setMarkdown(value));
+    setMarkdown(value);
   }, []);
 
   const handleClear = useCallback(() => {
     if (textareaRef.current) textareaRef.current.value = "";
-    startTransition(() => setMarkdown(""));
+    setMarkdown("");
   }, []);
 
   return (
