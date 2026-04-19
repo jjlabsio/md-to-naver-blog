@@ -1,5 +1,18 @@
 # md-to-naver-blog
 
+## v1.5.1
+
+[compare changes](https://github.com/jjlabsio/md-to-naver-blog/compare/mtnb@0.1.2...v1.5.1)
+
+### 🩹 Fixes
+
+- Use package@version convention for release tags and names ([#14](https://github.com/jjlabsio/md-to-naver-blog/pull/14))
+- **core:** 중첩 불릿 리스트 중복 제거 + 네이버 SmartEditor 포맷 적용 ([#15](https://github.com/jjlabsio/md-to-naver-blog/pull/15), [#16](https://github.com/jjlabsio/md-to-naver-blog/pull/16))
+
+### ❤️ Contributors
+
+- Jaejin Song ([@jjlabsio](https://github.com/jjlabsio))
+
 ## v1.5.0
 
 [compare changes](https://github.com/jjlabsio/md-to-naver-blog/compare/v1.4.0...v1.5.0)
