@@ -1,5 +1,17 @@
 # md-to-naver-blog
 
+## v1.5.2
+
+[compare changes](https://github.com/jjlabsio/md-to-naver-blog/compare/v1.5.1...v1.5.2)
+
+### 🏡 Chore
+
+- Ignore .claude/ local settings directory ([20f560b](https://github.com/jjlabsio/md-to-naver-blog/commit/20f560b))
+
+### ❤️ Contributors
+
+- Jaejin Song ([@jjlabsio](https://github.com/jjlabsio))
+
 ## v1.5.1
 
 [compare changes](https://github.com/jjlabsio/md-to-naver-blog/compare/mtnb@0.1.2...v1.5.1)
