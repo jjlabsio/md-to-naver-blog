@@ -19,15 +19,25 @@ export interface ConvertOptions {
   components?: Record<string, ComponentRenderer>;
 }
 
+export interface RenderedBlock {
+  id: string;
+  type: string;
+  html: string;
+}
+
+export type RenderCache = Map<string, { type: string; html: string }>;
+
 export interface ConvertResult {
   title: string;
   html: string;
   frontmatter: Record<string, unknown>;
+  blocks: RenderedBlock[];
 }
 
 export function convert(
   markdown: string,
   options?: ConvertOptions,
+  cache?: RenderCache,
 ): ConvertResult {
   const { data: frontmatter, content: rawContent } = matter(markdown);
 
@@ -35,11 +45,27 @@ export function convert(
   const title = titleMatch ? titleMatch[1].trim() : "";
 
   const lines = rawContent.split("\n");
-  const blocks = parseBlocks(lines);
+  const parsed = parseBlocks(lines);
   const htmlParts: string[] = [];
+  const rendered: RenderedBlock[] = [];
+  const idCounts = new Map<string, number>();
 
-  for (const block of blocks) {
-    htmlParts.push(renderBlock(block, options));
+  for (const block of parsed) {
+    const baseId = computeBlockId(block);
+    const seen = idCounts.get(baseId) ?? 0;
+    idCounts.set(baseId, seen + 1);
+    const id = seen === 0 ? baseId : `${baseId}#${seen}`;
+
+    const cached = cache?.get(baseId);
+    let html: string;
+    if (cached && cached.type === block.type) {
+      html = cached.html;
+    } else {
+      html = renderBlock(block, options);
+      cache?.set(baseId, { type: block.type, html });
+    }
+    htmlParts.push(html);
+    rendered.push({ id, type: block.type, html });
   }
 
   let html = htmlParts.join("\n");
@@ -47,7 +73,13 @@ export function convert(
   // Add tags from frontmatter
   if (frontmatter.tags && Array.isArray(frontmatter.tags)) {
     const tagStr = frontmatter.tags.map((t: string) => `#${t}`).join(" ");
-    html += `<p>${tagStr}</p>`;
+    const tagHtml = `<p>${tagStr}</p>`;
+    html += tagHtml;
+    rendered.push({
+      id: `tags:${fnv1a(tagStr)}`,
+      type: "tags",
+      html: tagHtml,
+    });
   }
 
   // Trim leading/trailing whitespace and blank <p> tags
@@ -59,7 +91,42 @@ export function convert(
     html = html.slice(0, -"\n<p>&nbsp;</p>".length);
   }
 
-  return { title, html, frontmatter };
+  const blocks = trimBlankBlocks(rendered);
+
+  return { title, html, frontmatter, blocks };
+}
+
+function trimBlankBlocks(blocks: RenderedBlock[]): RenderedBlock[] {
+  let start = 0;
+  let end = blocks.length;
+  while (start < end && blocks[start].type === "blank") start++;
+  while (end > start && blocks[end - 1].type === "blank") end--;
+  return start === 0 && end === blocks.length
+    ? blocks
+    : blocks.slice(start, end);
+}
+
+function fnv1a(input: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function computeBlockId(block: Block): string {
+  const parts: string[] = [block.type];
+  if (block.level !== undefined) parts.push(`l${block.level}`);
+  if (block.lang !== undefined) parts.push(`g${block.lang}`);
+  if (block.name !== undefined) parts.push(`n${block.name}`);
+  if (block.props) parts.push(`p${JSON.stringify(block.props)}`);
+  if (block.items) parts.push(`i${JSON.stringify(block.items)}`);
+  if (block.rows) parts.push(`r${JSON.stringify(block.rows)}`);
+  if (block.headerRow) parts.push(`h${JSON.stringify(block.headerRow)}`);
+  if (block.children !== undefined) parts.push(`c${block.children}`);
+  parts.push(block.content);
+  return `${block.type}:${fnv1a(parts.join("\u0001"))}`;
 }
 
 interface Block {

@@ -1,14 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { convert } from "@jjlabsio/md-to-naver-blog";
-import { useDebounce } from "@/hooks/use-debounce";
+import {
+  startTransition,
+  useCallback,
+  useDeferredValue,
+  useRef,
+  useState,
+} from "react";
 import { Eraser } from "lucide-react";
 import { MarkdownInput } from "@/components/markdown-input";
 import { HtmlPreview } from "@/components/html-preview";
 import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_MARKDOWN } from "@/constants/default-markdown";
+import { useConverter } from "@/hooks/use-converter";
 
 function ClearButton({ onClick }: { onClick: () => void }) {
   return (
@@ -20,18 +25,19 @@ function ClearButton({ onClick }: { onClick: () => void }) {
 }
 
 export function Converter() {
-  const [markdownInput, setMarkdownInput] = useState(DEFAULT_MARKDOWN);
-  const debouncedInput = useDebounce(markdownInput, 300);
-  const [html, setHtml] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [markdown, setMarkdown] = useState(DEFAULT_MARKDOWN);
+  const deferredMarkdown = useDeferredValue(markdown);
+  const { blocks, html } = useConverter(deferredMarkdown);
 
-  useEffect(() => {
-    if (debouncedInput.trim() === "") {
-      setHtml("");
-      return;
-    }
-    const result = convert(debouncedInput);
-    setHtml(result.html);
-  }, [debouncedInput]);
+  const handleValue = useCallback((value: string) => {
+    startTransition(() => setMarkdown(value));
+  }, []);
+
+  const handleClear = useCallback(() => {
+    if (textareaRef.current) textareaRef.current.value = "";
+    startTransition(() => setMarkdown(""));
+  }, []);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden lg:grid lg:grid-cols-2 lg:grid-rows-1">
@@ -40,9 +46,13 @@ export function Converter() {
           <span className="text-sm font-medium text-muted-foreground">
             마크다운 입력
           </span>
-          <ClearButton onClick={() => setMarkdownInput("")} />
+          <ClearButton onClick={handleClear} />
         </div>
-        <MarkdownInput value={markdownInput} onChange={setMarkdownInput} />
+        <MarkdownInput
+          ref={textareaRef}
+          defaultValue={DEFAULT_MARKDOWN}
+          onValue={handleValue}
+        />
       </div>
       <div className="flex min-h-0 flex-col gap-2">
         <div className="flex items-center justify-between">
@@ -51,7 +61,7 @@ export function Converter() {
           </span>
           <CopyButton html={html} />
         </div>
-        <HtmlPreview html={html} />
+        <HtmlPreview blocks={blocks} />
       </div>
     </div>
   );
