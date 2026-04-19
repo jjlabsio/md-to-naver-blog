@@ -1289,7 +1289,7 @@ function renderNestedOrderedList(
 // together) in Naver paste — Naver strips inline margin/padding from
 // <ul> and <p>, but literal characters always survive. Result most
 // closely resembles Naver's native nested list visual.
-const BULLET_CHARS = ["•", "○", "▪"] as const;
+const BULLET_CHARS = ["•", "◦", "▪"] as const;
 const NBSP_PER_LEVEL = 6; // ~30px visual indent at editor's 15px font
 
 function renderUnorderedList(block: Block, options?: ConvertOptions): string {
