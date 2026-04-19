@@ -1272,7 +1272,12 @@ function renderUnorderedList(block: Block, options?: ConvertOptions): string {
   const lines: string[] = [];
   for (const item of block.items) {
     const depth = depthByIndent.get(item.indent) ?? 0;
-    const bullet = BULLET_CHARS[Math.min(depth, BULLET_CHARS.length - 1)];
+    const bulletChar = BULLET_CHARS[Math.min(depth, BULLET_CHARS.length - 1)];
+    // depth 2+ (▪)는 Naver CSS square보다 커 보여서 0.7em으로 축소 시도
+    const bullet =
+      bulletChar === "▪"
+        ? `<span style="font-size: 0.7em;">${bulletChar}</span>`
+        : bulletChar;
     const indent = "&nbsp;".repeat(depth * NBSP_PER_LEVEL);
     const text = processInline(item.text, options);
     lines.push(
