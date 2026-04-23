@@ -4,13 +4,13 @@ import { unified } from "unified";
 import remarkGfm from "remark-gfm";
 import remarkMdx from "remark-mdx";
 import remarkParse from "remark-parse";
+import {
+  createError,
+  ErrorCollector,
+  type ParseError,
+} from "./errors.js";
 
-export interface ParseError {
-  code: string;
-  message: string;
-  severity: "error" | "warning" | "info";
-  position?: { line: number; column: number; offset?: number };
-}
+export type { ParseError, ParseErrorCode } from "./errors.js";
 
 interface ObjectLike {
   [key: string]: unknown;
@@ -20,9 +20,11 @@ type NormalizedPosition = NonNullable<ParseError["position"]>;
 
 export function parseMdx(source: string): {
   mdast: Root;
+  content: string;
   frontmatter: Record<string, unknown>;
   errors: ParseError[];
 } {
+  const errors = new ErrorCollector();
   let content = source;
   let frontmatter: Record<string, unknown> = {};
   let frontmatterLineOffset = 0;
@@ -35,10 +37,12 @@ export function parseMdx(source: string): {
     frontmatterLineOffset = countFrontmatterLines(source, content);
     frontmatterByteOffset = countFrontmatterBytes(source, content);
   } catch (error) {
+    errors.push(createParseError(error));
     return {
       mdast: createEmptyRoot(),
+      content: source,
       frontmatter: {},
-      errors: [createParseError(error)],
+      errors: errors.drain(),
     };
   }
 
@@ -51,14 +55,17 @@ export function parseMdx(source: string): {
 
     return {
       mdast,
+      content,
       frontmatter,
-      errors: [],
+      errors: errors.drain(),
     };
   } catch (error) {
+    errors.push(createParseError(error, frontmatterLineOffset, frontmatterByteOffset));
     return {
       mdast: createEmptyRoot(),
+      content,
       frontmatter,
-      errors: [createParseError(error, frontmatterLineOffset, frontmatterByteOffset)],
+      errors: errors.drain(),
     };
   }
 }
@@ -81,12 +88,7 @@ function createParseError(
     byteOffset,
   );
 
-  return {
-    code: "MDX_PARSE_ERROR",
-    message: getErrorMessage(error),
-    severity: "error",
-    ...(position ? { position } : {}),
-  };
+  return createError("MDX_PARSE_ERROR", getErrorMessage(error), position);
 }
 
 function getErrorMessage(error: unknown): string {
@@ -104,7 +106,7 @@ function getErrorMessage(error: unknown): string {
     return error.message;
   }
 
-  return "Failed to parse MDX input";
+  return "입력을 파싱하지 못했습니다";
 }
 
 function normalizeFrontmatter(value: unknown): Record<string, unknown> {

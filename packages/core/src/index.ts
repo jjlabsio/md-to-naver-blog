@@ -1,4 +1,6 @@
-import matter from "gray-matter";
+import type { ParseError } from "./pipeline/errors.js";
+import { ErrorCollector } from "./pipeline/errors.js";
+import { parseMdx } from "./pipeline/parse.js";
 
 export interface UrlContext {
   type: "link" | "image";
@@ -32,6 +34,7 @@ export interface ConvertResult {
   html: string;
   frontmatter: Record<string, unknown>;
   blocks: RenderedBlock[];
+  errors: ParseError[];
 }
 
 export function convert(
@@ -39,7 +42,11 @@ export function convert(
   options?: ConvertOptions,
   cache?: RenderCache,
 ): ConvertResult {
-  const { data: frontmatter, content: rawContent } = matter(markdown);
+  const mdxResult = parseMdx(markdown);
+  const errors = new ErrorCollector();
+  errors.pushAll(mdxResult.errors);
+  const frontmatter = mdxResult.frontmatter;
+  const rawContent = mdxResult.content;
 
   const titleMatch = rawContent.match(/^#\s+(.+)$/m);
   const title = titleMatch ? titleMatch[1].trim() : "";
@@ -93,7 +100,7 @@ export function convert(
 
   const blocks = trimBlankBlocks(rendered);
 
-  return { title, html, frontmatter, blocks };
+  return { title, html, frontmatter, blocks, errors: errors.drain() };
 }
 
 function trimBlankBlocks(blocks: RenderedBlock[]): RenderedBlock[] {
