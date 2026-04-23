@@ -2,7 +2,9 @@ import type { PhrasingContent } from "mdast";
 import type { ConvertOptions } from "../index.js";
 import type { RenderContext } from "./block.js";
 import {
-  extractStringProps,
+  createComponentRenderCtx,
+  isRegisteredComponentName,
+  resolveComponentProps,
   type MdxJsxAttributeLike,
   type MdxJsxExpressionAttributeLike,
 } from "./component.js";
@@ -119,25 +121,36 @@ function renderInlineComponent(
   node: MdxJsxTextElementLike,
   ctx: RenderContext | undefined,
 ): string {
-  const childrenHtml = renderInline(node.children as PhrasingContent[], {
-    ...ctx,
-    depth: (ctx?.depth ?? 0) + 1,
-  });
+  const registeredName = isRegisteredComponentName(
+    node.name,
+    ctx?.options?.components,
+  )
+    ? node.name
+    : undefined;
+  const renderer = registeredName
+    ? ctx?.options?.components?.[registeredName]
+    : undefined;
+  const childContext = renderer
+    ? {
+        ...ctx,
+        depth: (ctx?.depth ?? 0) + 1,
+        parentComponentName: registeredName,
+        currentComponentIndex: undefined,
+      }
+    : ctx;
+  const childrenHtml = renderInline(
+    node.children as PhrasingContent[],
+    childContext,
+  );
 
-  if (node.name === null) {
-    return childrenHtml;
-  }
-
-  if (!/^[A-Z]/.test(node.name)) {
-    return childrenHtml;
-  }
-
-  const renderer = ctx?.options?.components?.[node.name];
   if (!renderer) {
     return childrenHtml;
   }
 
-  return renderer(extractStringProps(node.attributes), childrenHtml);
+  const { props, errors } = resolveComponentProps(node.attributes);
+  ctx?.errors?.pushAll(errors);
+
+  return renderer(props, childrenHtml, createComponentRenderCtx(ctx ?? {}));
 }
 
 function addPlaceholder(

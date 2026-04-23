@@ -13,12 +13,19 @@ export interface UrlContext {
 }
 
 export interface ComponentProps {
-  [key: string]: string;
+  [key: string]: string | number | boolean | null;
+}
+
+export interface ComponentRenderCtx {
+  depth: number;
+  index: number;
+  parent?: string;
 }
 
 export type ComponentRenderer = (
   props: ComponentProps,
   children: string,
+  ctx?: ComponentRenderCtx,
 ) => string;
 
 export interface ConvertOptions {
@@ -61,6 +68,7 @@ export function convert(
     depth: 0,
     cache,
     hash: fnv1a,
+    errors,
   });
   const htmlParts = renderedEntries.map((entry) => entry.html);
   const renderedBlocks: RenderedBlock[] = [];

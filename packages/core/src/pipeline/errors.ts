@@ -50,6 +50,7 @@ export function createError(
   code: ParseErrorCode,
   message?: string,
   nodeOrPosition?: unknown,
+  severity: ParseError["severity"] = "error",
 ): ParseError {
   const position = normalizePosition(nodeOrPosition);
   const formattedMessage = formatMessage(code, message);
@@ -57,7 +58,7 @@ export function createError(
   return {
     code,
     message: formattedMessage,
-    severity: "error",
+    severity,
     ...(position ? { position } : {}),
   };
 }

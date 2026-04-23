@@ -12,7 +12,12 @@ import type {
   TableRow,
 } from "mdast";
 import type { ConvertOptions, RenderCache } from "../index.js";
-import { renderComponent, type MdxJsxFlowElementLike } from "./component.js";
+import type { ParseError } from "../pipeline/errors.js";
+import {
+  isRegisteredComponentName,
+  renderComponent,
+  type MdxJsxFlowElementLike,
+} from "./component.js";
 import { highlightCode } from "./code-highlight.js";
 import { renderInline } from "./inline.js";
 import { escapeHtml, resolveUrl } from "./utils.js";
@@ -70,6 +75,14 @@ export interface RenderContext {
   depth: number;
   cache?: RenderCache;
   hash?: (input: string) => string;
+  errors?: {
+    pushAll(errors: ParseError[]): void;
+  };
+  currentComponentIndex?: number;
+  parentComponentName?: string;
+  componentCursor?: {
+    value: number;
+  };
 }
 
 export interface RenderEntry {
@@ -105,7 +118,12 @@ export function renderRoot(
     pushBlankEntries(entries, firstLine - 1, ctx);
   }
 
-  entries.push(...renderChildEntries(nodes, ctx));
+  entries.push(
+    ...renderChildEntries(nodes, {
+      ...ctx,
+      componentCursor: { value: 0 },
+    }),
+  );
 
   const lastEndLine = getEndLine(nodes[nodes.length - 1]);
   const rootEndLine = root.position?.end?.line;
@@ -130,7 +148,10 @@ export function renderChildren(
   children: RootContent[],
   ctx: RenderContext,
 ): string[] {
-  return renderChildEntries(children as RootContentLike[], ctx).map(
+  return renderChildEntries(
+    children as RootContentLike[],
+    ctx.componentCursor ? ctx : { ...ctx, componentCursor: { value: 0 } },
+  ).map(
     (entry) => entry.html,
   );
 }
@@ -152,7 +173,7 @@ function renderChildEntries(
       pushBlankEntries(entries, startLine - prevEndLine - 1, ctx);
     }
 
-    entries.push(...renderNodeEntries(child, ctx));
+    entries.push(...renderNodeEntries(child, getChildRenderContext(child, ctx)));
 
     const endLine = getEndLine(child);
     if (endLine !== undefined) {
@@ -576,14 +597,15 @@ function createCachedEntry(
 ): RenderEntry {
   const key = stableSerialize(keySource);
   const baseId = `${type}:${ctx.hash ? ctx.hash(`${type}\u0001${key}`) : key}`;
-  const cached = ctx.cache?.get(baseId);
+  const cacheKey = createCacheKey(baseId, ctx);
+  const cached = ctx.cache?.get(cacheKey);
 
   if (cached && cached.type === type) {
     return { baseId, type, html: cached.html };
   }
 
   const html = render();
-  ctx.cache?.set(baseId, { type, html });
+  ctx.cache?.set(cacheKey, { type, html });
   return { baseId, type, html };
 }
 
@@ -605,6 +627,38 @@ function getStartLine(node: { position?: PositionLike } | undefined): number | u
 
 function getEndLine(node: { position?: PositionLike } | undefined): number | undefined {
   return node?.position?.end?.line;
+}
+
+function getChildRenderContext(
+  node: RootContentLike,
+  ctx: RenderContext,
+): RenderContext {
+  if (
+    node.type !== "mdxJsxFlowElement" ||
+    !isRegisteredComponentName(node.name, ctx.options?.components)
+  ) {
+    return ctx;
+  }
+
+  const index = ctx.componentCursor?.value ?? 0;
+  if (ctx.componentCursor) {
+    ctx.componentCursor.value = index + 1;
+  }
+
+  return {
+    ...ctx,
+    currentComponentIndex: index,
+  };
+}
+
+function createCacheKey(baseId: string, ctx: RenderContext): string {
+  const renderCtx = stableSerialize({
+    depth: ctx.depth,
+    index: ctx.currentComponentIndex,
+    parent: ctx.parentComponentName,
+  });
+
+  return ctx.hash ? `${baseId}@${ctx.hash(renderCtx)}` : `${baseId}@${renderCtx}`;
 }
 
 function stableSerialize(value: unknown): string {
