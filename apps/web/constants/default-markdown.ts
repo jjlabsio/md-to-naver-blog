@@ -367,7 +367,7 @@ export const EXAMPLES: ExampleEntry[] = [
     markdown: NESTED_COMPONENTS_MARKDOWN,
   },
   {
-    label: "에러 처리 데모",
+    label: "에러 처리 예시",
     value: "error-handling",
     markdown: ERROR_HANDLING_MARKDOWN,
   },
