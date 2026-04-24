@@ -65,12 +65,15 @@ export function convert(
     : mdxResult.mdast;
   const title = extractTitle(mdast);
 
-  const renderedEntries = renderRoot(mdast as Root & { children: RootContent[] }, {
-    options,
-    depth: 0,
-    cache,
-    errors,
-  });
+  const renderedEntries = renderRoot(
+    mdast as Root & { children: RootContent[] },
+    {
+      options,
+      depth: 0,
+      cache,
+      errors,
+    },
+  );
   const htmlParts = renderedEntries.map((entry) => entry.html);
   const renderedBlocks: RenderedBlock[] = [];
   const idCounts = new Map<string, number>();
@@ -115,14 +118,9 @@ export function convert(
 
 function shouldFallbackToMarkdownParse(result: {
   mdast: Root;
-  content: string;
   errors: ParseError[];
 }): boolean {
-  return (
-    result.mdast.children.length === 0 &&
-    result.errors.length > 0 &&
-    /\{\{<\s*figure\b/.test(result.content)
-  );
+  return result.mdast.children.length === 0 && result.errors.length > 0;
 }
 
 function parseMarkdownFallback(content: string): Root {
