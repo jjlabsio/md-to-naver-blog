@@ -12,6 +12,7 @@ import type {
   TableRow,
 } from "mdast";
 import type { ConvertOptions, RenderCache } from "../index.js";
+import { nodeHash } from "../cache.js";
 import { createError, type ParseError } from "../pipeline/errors.js";
 import {
   isRegisteredComponentName,
@@ -76,7 +77,6 @@ export interface RenderContext {
   options?: ConvertOptions;
   depth: number;
   cache?: RenderCache;
-  hash?: (input: string) => string;
   errors?: {
     pushAll(errors: ParseError[]): void;
   };
@@ -108,6 +108,8 @@ const NBSP_PER_LEVEL = 6;
 const HUGO_FIGURE_PATTERN =
   /\{\{<\s*figure\s+src="([^"]+)"\s+alt="([^"]+)"\s+caption="([^"]+)"\s*>\}\}/;
 
+const BLANK_HTML = "<p>&nbsp;</p>";
+
 export function renderRoot(
   root: { children: RootContent[]; position?: PositionLike },
   ctx: RenderContext,
@@ -117,7 +119,7 @@ export function renderRoot(
   const firstLine = getStartLine(nodes[0]);
 
   if (firstLine !== undefined && firstLine > 1) {
-    pushBlankEntries(entries, firstLine - 1, ctx);
+    pushBlankEntries(entries, firstLine - 1);
   }
 
   entries.push(
@@ -134,7 +136,7 @@ export function renderRoot(
     rootEndLine !== undefined &&
     rootEndLine > lastEndLine
   ) {
-    pushBlankEntries(entries, rootEndLine - lastEndLine, ctx);
+    pushBlankEntries(entries, rootEndLine - lastEndLine);
   }
 
   return entries;
@@ -172,7 +174,7 @@ function renderChildEntries(
       startLine !== undefined &&
       startLine - prevEndLine > 1
     ) {
-      pushBlankEntries(entries, startLine - prevEndLine - 1, ctx);
+      pushBlankEntries(entries, startLine - prevEndLine - 1);
     }
 
     entries.push(...renderNodeEntries(child, getChildRenderContext(child, ctx)));
@@ -431,7 +433,7 @@ function renderLooseOrderedListEntries(
         startLine !== undefined &&
         startLine - prevEndLine > 1
       ) {
-        pushBlankEntries(entries, startLine - prevEndLine - 1, ctx);
+        pushBlankEntries(entries, startLine - prevEndLine - 1);
       }
 
       if (firstBlock && child.type === "paragraph") {
@@ -610,8 +612,8 @@ function createCachedEntry(
   ctx: RenderContext,
   render: () => string,
 ): RenderEntry {
-  const key = stableSerialize(keySource);
-  const baseId = `${type}:${ctx.hash ? ctx.hash(`${type}\u0001${key}`) : key}`;
+  const hash = nodeHash(keySource);
+  const baseId = `${type}:${hash}`;
   const cacheKey = createCacheKey(baseId, ctx);
   const cached = ctx.cache?.get(cacheKey);
 
@@ -624,15 +626,14 @@ function createCachedEntry(
   return { baseId, type, html };
 }
 
+/** blank line 블록은 캐시 제외 -- 즉시 상수 반환 */
 function pushBlankEntries(
   entries: RenderEntry[],
   count: number,
-  ctx: RenderContext,
 ): void {
+  const baseId = `blank:${nodeHash("blank")}`;
   for (let i = 0; i < count; i++) {
-    entries.push(
-      createCachedEntry("blank", "blank", ctx, () => "<p>&nbsp;</p>"),
-    );
+    entries.push({ baseId, type: "blank", html: BLANK_HTML });
   }
 }
 
@@ -667,30 +668,11 @@ function getChildRenderContext(
 }
 
 function createCacheKey(baseId: string, ctx: RenderContext): string {
-  const renderCtx = stableSerialize({
+  const renderCtx = nodeHash({
     depth: ctx.depth,
     index: ctx.currentComponentIndex,
     parent: ctx.parentComponentName,
   });
 
-  return ctx.hash ? `${baseId}@${ctx.hash(renderCtx)}` : `${baseId}@${renderCtx}`;
-}
-
-function stableSerialize(value: unknown): string {
-  if (value === null || typeof value !== "object") {
-    return JSON.stringify(value);
-  }
-
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => stableSerialize(item)).join(",")}]`;
-  }
-
-  const objectValue = value as Record<string, unknown>;
-  const keys = Object.keys(objectValue)
-    .filter((key) => key !== "position" && key !== "data")
-    .sort();
-
-  return `{${keys
-    .map((key) => `${JSON.stringify(key)}:${stableSerialize(objectValue[key])}`)
-    .join(",")}}`;
+  return `${baseId}@${renderCtx}`;
 }

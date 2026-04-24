@@ -67,7 +67,6 @@ export function convert(
     options,
     depth: 0,
     cache,
-    hash: fnv1a,
     errors,
   });
   const htmlParts = renderedEntries.map((entry) => entry.html);
