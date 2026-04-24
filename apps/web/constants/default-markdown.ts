@@ -141,3 +141,234 @@ npm install md-to-naver-blog
 
 마크다운은 배우기 쉽고, 다양한 플랫폼에서 활용할 수 있는 강력한 도구입니다. 이 글의 모든 문법을 네이버 블로그에 그대로 붙여넣을 수 있습니다.
 `;
+
+export const JSX_COMPONENTS_MARKDOWN = `---
+tags: ["MDX", "컴포넌트", "네이버블로그"]
+---
+
+# JSX 컴포넌트 활용하기
+
+v2부터 마크다운 안에서 **JSX 컴포넌트**를 사용할 수 있습니다. 컴포넌트를 등록하면 블로그에 맞는 HTML로 자동 변환됩니다.
+
+## Callout 컴포넌트
+
+다양한 타입의 안내 박스를 만들 수 있습니다.
+
+<Callout type="info">
+**참고**: 이 기능은 v2에서 새롭게 추가되었습니다.
+기존 마크다운 문법과 자유롭게 섞어 쓸 수 있습니다.
+</Callout>
+
+<Callout type="warning">
+**주의**: 컴포넌트 이름은 반드시 **대문자**로 시작해야 합니다.
+\`callout\`이 아니라 \`Callout\`으로 작성하세요.
+</Callout>
+
+<Callout type="tip">
+**팁**: 컴포넌트 안에서도 **볼드**, *이탤릭*, \`인라인 코드\` 등
+모든 마크다운 인라인 문법을 사용할 수 있습니다.
+</Callout>
+
+<Callout type="danger">
+**위험**: 이 작업은 되돌릴 수 없습니다. 진행하기 전에 반드시 백업하세요.
+</Callout>
+
+## Badge 컴포넌트
+
+인라인 뱃지로 상태나 라벨을 표시합니다.
+
+<Badge color="green">완료</Badge> 이 기능은 구현이 완료되었습니다.
+
+<Badge color="blue">v2</Badge> 새 버전에서만 사용 가능한 기능입니다.
+
+<Badge color="red">필수</Badge> 이 설정은 반드시 입력해야 합니다.
+
+## Self-closing 컴포넌트
+
+닫는 태그 없이 사용하는 컴포넌트도 지원합니다.
+
+<Divider style="dashed" />
+
+위와 아래를 구분하는 커스텀 구분선입니다.
+
+## 마크다운과 혼합 사용
+
+컴포넌트와 일반 마크다운을 자유롭게 섞어 쓸 수 있습니다.
+
+1. 먼저 패키지를 설치합니다.
+
+   \`\`\`bash
+   npm install @jjlabsio/md-to-naver-blog
+   \`\`\`
+
+2. 컴포넌트를 등록합니다.
+
+<Callout type="info">
+컴포넌트는 \`convert()\` 함수의 두 번째 인자로 전달합니다.
+
+\`\`\`javascript
+const result = convert(markdown, {
+  components: { Callout, Badge }
+});
+\`\`\`
+</Callout>
+
+3. 결과를 확인합니다.
+`;
+
+export const NESTED_COMPONENTS_MARKDOWN = `---
+tags: ["MDX", "중첩컴포넌트", "튜토리얼"]
+---
+
+# 중첩 컴포넌트와 블록 자식
+
+v2의 핵심 기능 중 하나는 **컴포넌트 안에 블록 레벨 마크다운**을 넣을 수 있다는 것입니다.
+
+## Step 컴포넌트로 튜토리얼 만들기
+
+<Step number={1} title="프로젝트 초기화">
+
+새 프로젝트를 만들고 패키지를 설치합니다.
+
+\`\`\`bash
+mkdir my-blog-converter
+cd my-blog-converter
+npm init -y
+npm install @jjlabsio/md-to-naver-blog
+\`\`\`
+
+</Step>
+
+<Step number={2} title="컴포넌트 정의">
+
+블로그에서 사용할 컴포넌트를 정의합니다.
+
+\`\`\`javascript
+const components = {
+  Callout: (props, children) => {
+    const colors = { info: '#e3f2fd', warning: '#fff3e0' };
+    const bg = colors[props.type] || '#f5f5f5';
+    return \\\`<div style="background:\${bg}; padding:16px;">\${children}</div>\\\`;
+  }
+};
+\`\`\`
+
+<Callout type="tip">
+컴포넌트 렌더러는 순수 함수로, HTML 문자열을 반환합니다.
+</Callout>
+
+</Step>
+
+<Step number={3} title="변환 실행">
+
+마크다운을 HTML로 변환합니다.
+
+\`\`\`javascript
+import { convert } from "@jjlabsio/md-to-naver-blog";
+
+const result = convert(markdown, { components });
+// result.html → 변환된 HTML
+// result.title → 추출된 제목
+// result.frontmatter → YAML 메타데이터
+\`\`\`
+
+변환 결과의 HTML을 네이버 블로그 에디터에 붙여넣으면 됩니다.
+
+</Step>
+
+## 중첩 깊이와 컨텍스트
+
+컴포넌트는 여러 단계로 중첩할 수 있으며, 각 컴포넌트는 자신의 **depth**와 **parent** 정보를 받습니다.
+
+<Callout type="info">
+
+이것은 **1단계** Callout입니다.
+
+<Callout type="warning">
+
+이것은 **2단계** 중첩 Callout입니다. 부모 컴포넌트 안에서 들여쓰기됩니다.
+
+</Callout>
+
+</Callout>
+
+## 컴포넌트와 테이블 조합
+
+<Callout type="info">
+
+아래 표는 Callout 안에 포함된 마크다운 테이블입니다.
+
+| 속성 | 타입 | 설명 |
+|------|------|------|
+| type | string | 콜아웃 유형 (info, warning, tip, danger) |
+| title | string | 선택적 제목 |
+
+</Callout>
+`;
+
+export const ERROR_HANDLING_MARKDOWN = `---
+tags: ["MDX", "에러처리", "v2"]
+---
+
+# 에러 처리 데모
+
+v2는 MDX 파싱 중 오류가 발생해도 **변환을 중단하지 않습니다**. 잘못된 부분만 표시하고 나머지는 정상 변환합니다.
+
+## 정상 변환되는 부분
+
+이 문단은 정상적으로 변환됩니다. **볼드**와 *이탤릭*도 잘 됩니다.
+
+<Callout type="info">
+이 Callout은 정상적으로 렌더링됩니다.
+</Callout>
+
+## 닫히지 않은 태그
+
+아래는 닫는 태그가 없는 컴포넌트입니다. 에러 배너에 경고가 표시되지만 다른 콘텐츠는 정상 변환됩니다.
+아래 태그 뒤에 \`</Callout>\`을 직접 추가해보세요 — 에러 배너가 사라지고 정상 변환되는 것을 확인할 수 있습니다.
+
+<Callout type="warning">
+이 태그는 닫히지 않았습니다.
+
+## 이후 콘텐츠
+
+위의 오류에도 불구하고, **이 부분은 정상적으로 변환**됩니다.
+
+> 에러가 있어도 작성을 계속할 수 있습니다.
+> 에러 배너에서 문제를 확인하고 수정하면 됩니다.
+
+<Callout type="tip">
+에러 배너의 화살표를 클릭하면 상세 오류 목록을 확인할 수 있습니다.
+</Callout>
+`;
+
+export type ExampleKey =
+  | "basic"
+  | "jsx-components"
+  | "nested-components"
+  | "error-handling";
+
+export interface ExampleEntry {
+  label: string;
+  value: ExampleKey;
+  markdown: string;
+}
+
+export const EXAMPLES: ExampleEntry[] = [
+  { label: "기본 마크다운", value: "basic", markdown: DEFAULT_MARKDOWN },
+  {
+    label: "JSX 컴포넌트",
+    value: "jsx-components",
+    markdown: JSX_COMPONENTS_MARKDOWN,
+  },
+  {
+    label: "중첩 컴포넌트",
+    value: "nested-components",
+    markdown: NESTED_COMPONENTS_MARKDOWN,
+  },
+  {
+    label: "에러 처리 예시",
+    value: "error-handling",
+    markdown: ERROR_HANDLING_MARKDOWN,
+  },
+];

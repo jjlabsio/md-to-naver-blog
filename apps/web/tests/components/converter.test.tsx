@@ -5,13 +5,14 @@ import { Converter } from "@/components/converter";
 vi.mock("@/hooks/use-converter", () => ({
   useConverter: (markdown: string) => {
     if (markdown.trim() === "") {
-      return { title: "", blocks: [], html: "" };
+      return { title: "", blocks: [], html: "", errors: [] };
     }
     const result = convert(markdown);
     return {
       title: result.title,
       blocks: result.blocks,
       html: result.html,
+      errors: result.errors ?? [],
     };
   },
 }));

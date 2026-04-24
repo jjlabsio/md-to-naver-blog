@@ -1,4 +1,6 @@
 import type { NextConfig } from "next";
+import { globSync } from "fs";
+import path from "path";
 
 const nextConfig: NextConfig = {
   transpilePackages: ["md-to-naver-blog"],
@@ -9,6 +11,19 @@ const nextConfig: NextConfig = {
         ...config.resolve.fallback,
         fs: false,
       };
+
+      const root = path.resolve(__dirname, "../..");
+      const matches = globSync(
+        "node_modules/.pnpm/decode-named-character-reference*/node_modules/decode-named-character-reference/index.js",
+        { cwd: root },
+      );
+      if (matches.length > 0) {
+        const staticPath = path.resolve(root, matches[0]);
+        config.resolve.alias = {
+          ...config.resolve.alias,
+          "decode-named-character-reference": staticPath,
+        };
+      }
     }
     return config;
   },

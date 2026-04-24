@@ -27,6 +27,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/mdast": "^4.0.4",
     "eslint": "^9.24.0",
     "tsup": "^8.4.0",
     "typescript": "^5.8.3",
@@ -34,6 +35,10 @@
     "vitest": "^3.1.1"
   },
   "dependencies": {
-    "gray-matter": "^4.0.3"
+    "gray-matter": "^4.0.3",
+    "remark-gfm": "^4.0.1",
+    "remark-mdx": "^3.1.1",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5"
   }
 }

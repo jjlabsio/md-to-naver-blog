@@ -1,15 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { ConvertResult, RenderedBlock } from "@jjlabsio/md-to-naver-blog";
+import type {
+  ConvertResult,
+  ParseError,
+  RenderedBlock,
+} from "@jjlabsio/md-to-naver-blog";
 
 export interface ConverterState {
   title: string;
   blocks: RenderedBlock[];
   html: string;
+  errors: ParseError[];
 }
 
-const EMPTY_STATE: ConverterState = { title: "", blocks: [], html: "" };
+const EMPTY_STATE: ConverterState = { title: "", blocks: [], html: "", errors: [] };
 
 function createWorker(): Worker {
   return new Worker(new URL("../lib/convert-worker.ts", import.meta.url), {
@@ -37,6 +42,7 @@ export function useConverter(markdown: string): ConverterState {
         title: result.title,
         blocks: result.blocks,
         html: result.html,
+        errors: result.errors ?? [],
       });
     };
 
