@@ -21,10 +21,17 @@ interface MdxJsxTextElementLike {
 type PhrasingContentLike =
   | (PhrasingContent & { type: string; [key: string]: unknown })
   | MdxJsxTextElementLike
-  | { type: "mdxTextExpression"; value?: string; position?: { start?: { line?: number; column?: number; offset?: number }; end?: { line?: number; column?: number; offset?: number } } };
+  | {
+      type: "mdxTextExpression";
+      value?: string;
+      position?: {
+        start?: { line?: number; column?: number; offset?: number };
+        end?: { line?: number; column?: number; offset?: number };
+      };
+    };
 
 const INLINE_CODE_STYLE =
-  "background-color: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: &quot;Courier New&quot;, monospace; font-size: 0.9em;";
+  "font-family: &quot;Courier New&quot;, monospace; font-size: 0.9em;";
 
 export function renderInline(
   nodes: PhrasingContent[],
@@ -72,9 +79,9 @@ function renderNodeToMixedText(
       );
     case "inlineCode":
       return addPlaceholder(
-        `<code style="${INLINE_CODE_STYLE}">${escapeHtml(
+        `<code style="${INLINE_CODE_STYLE}">\`${escapeHtml(
           String(node.value ?? ""),
-        )}</code>`,
+        )}\`</code>`,
         placeholders,
       );
     case "link":
@@ -204,7 +211,7 @@ function processInlineMixed(
       const end = text.indexOf("`", i + 1);
       if (end !== -1) {
         const code = text.slice(i + 1, end);
-        result += `<code style="${INLINE_CODE_STYLE}">${escapeHtml(code)}</code>`;
+        result += `<code style="${INLINE_CODE_STYLE}">\`${escapeHtml(code)}\`</code>`;
         i = end + 1;
         continue;
       }
@@ -307,7 +314,11 @@ function processInlineMixed(
   return result;
 }
 
-function findClosingMarker(text: string, start: number, marker: string): number {
+function findClosingMarker(
+  text: string,
+  start: number,
+  marker: string,
+): number {
   let i = start;
   while (i <= text.length - marker.length) {
     if (text[i] === "`") {
