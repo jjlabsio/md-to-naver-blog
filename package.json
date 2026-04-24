@@ -12,6 +12,7 @@
     "prepare": "husky"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.31.0",
     "eslint": "^9.24.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.0",
