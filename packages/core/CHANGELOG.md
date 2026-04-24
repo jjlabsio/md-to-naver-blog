@@ -1,5 +1,17 @@
 # md-to-naver-blog
 
+## v1.6.0
+
+[compare changes](https://github.com/jjlabsio/md-to-naver-blog/compare/v1.5.3...v1.6.0)
+
+### 🚀 Enhancements
+
+- V2.0.0 MDX/JSX first-class support ([#18](https://github.com/jjlabsio/md-to-naver-blog/pull/18))
+
+### ❤️ Contributors
+
+- Jaejin Song ([@jjlabsio](https://github.com/jjlabsio))
+
 ## 2.0.0 (Unreleased)
 
 ### Breaking Changes
