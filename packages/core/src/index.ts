@@ -22,6 +22,7 @@ export interface ComponentRenderCtx {
   depth: number;
   index: number;
   parent?: string;
+  childBlocks: string[];
 }
 
 export type ComponentRenderer = (
@@ -195,6 +196,8 @@ export function getHtmlClipboardScript(html: string): string {
   return navigator.clipboard.write([item]);
 })()`;
 }
+
+export { injectBlockStyle } from "./render/utils.js";
 
 export function getTextClipboardScript(text: string): string {
   const escaped = JSON.stringify(text);

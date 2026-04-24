@@ -1,5 +1,9 @@
 import type { RootContent } from "mdast";
-import type { ComponentProps, ComponentRenderCtx, ComponentRenderer } from "../index.js";
+import type {
+  ComponentProps,
+  ComponentRenderCtx,
+  ComponentRenderer,
+} from "../index.js";
 import { createError, type ParseError } from "../pipeline/errors.js";
 import { renderChildren, type RenderContext } from "./block.js";
 
@@ -76,12 +80,13 @@ export function renderComponent(
   const renderer = registeredName
     ? getRegisteredComponentRenderer(registeredName, ctx.options?.components)
     : undefined;
-  const childrenHtml = renderChildren(
+  const childBlocks = renderChildren(
     node.children,
     renderer && registeredName
       ? createRegisteredChildContext(ctx, registeredName)
       : createPassthroughChildContext(ctx),
-  ).join("\n");
+  );
+  const childrenHtml = childBlocks.join("\n");
 
   if (!renderer) {
     return childrenHtml;
@@ -90,7 +95,10 @@ export function renderComponent(
   const { props, errors } = resolveComponentProps(node.attributes);
   ctx.errors?.pushAll(errors);
 
-  return renderer(props, childrenHtml, createComponentRenderCtx(ctx));
+  return renderer(props, childrenHtml, {
+    ...createComponentRenderCtx(ctx),
+    childBlocks,
+  });
 }
 
 export function resolveComponentProps(
@@ -126,12 +134,7 @@ export function evaluateAttribute(
   if (attribute.type === "mdxJsxExpressionAttribute") {
     return {
       skip: true,
-      error: createError(
-        "MDX_SPREAD_ATTR",
-        undefined,
-        attribute,
-        "info",
-      ),
+      error: createError("MDX_SPREAD_ATTR", undefined, attribute, "info"),
     };
   }
 
@@ -183,9 +186,8 @@ export function createComponentRenderCtx(ctx: {
   return {
     depth: ctx.depth ?? 0,
     index: ctx.currentComponentIndex ?? 0,
-    ...(ctx.parentComponentName
-      ? { parent: ctx.parentComponentName }
-      : {}),
+    childBlocks: [],
+    ...(ctx.parentComponentName ? { parent: ctx.parentComponentName } : {}),
   };
 }
 
@@ -209,9 +211,9 @@ function createPassthroughChildContext(ctx: RenderContext): RenderContext {
   };
 }
 
-function extractLiteralValue(value: unknown):
-  | { ok: true; value: ComponentProps[string] }
-  | { ok: false } {
+function extractLiteralValue(
+  value: unknown,
+): { ok: true; value: ComponentProps[string] } | { ok: false } {
   if (!isAttributeValueExpression(value)) {
     return { ok: false };
   }

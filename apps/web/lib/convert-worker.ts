@@ -2,6 +2,7 @@
 
 import {
   convert,
+  injectBlockStyle,
   type ComponentRenderer,
   type RenderCache,
 } from "@jjlabsio/md-to-naver-blog";
@@ -22,17 +23,61 @@ const CALLOUT_ICONS: Record<string, string> = {
   danger: "🚨",
 };
 
-const Callout: ComponentRenderer = (props, children) => {
+const BLANK_BLOCK = "<p>&nbsp;</p>";
+
+const Callout: ComponentRenderer = (props, children, ctx) => {
   const type = String(props.type || "info");
   const { bg, border } = CALLOUT_COLORS[type] ?? CALLOUT_COLORS.info;
   const icon = CALLOUT_ICONS[type] ?? "";
-  return `<div style="background: ${bg}; border-left: 4px solid ${border}; padding: 16px 20px; margin: 12px 0; border-radius: 4px;"><span style="font-size: 1.1em;">${icon}</span> ${children}</div>`;
+  const iconHtml = `<span style="font-size: 1.1em;">${icon}</span> `;
+  const textStyle = `border-left: 4px solid ${border}; background: ${bg}; padding: 8px 20px`;
+  const blockStyle = `border-left: 4px solid ${border}; padding-left: 20px`;
+
+  const blocks = ctx?.childBlocks;
+  if (!blocks || blocks.length === 0) {
+    return `<p style="${textStyle}">${iconHtml}${children}</p>`;
+  }
+
+  const contentBlocks = blocks.filter((b) => b !== BLANK_BLOCK);
+  if (contentBlocks.length === 0) {
+    return `<p style="${textStyle}">${iconHtml}</p>`;
+  }
+
+  return contentBlocks
+    .map((block, i) => {
+      const isParagraph = block.startsWith("<p");
+      const style = isParagraph ? textStyle : blockStyle;
+      if (i === 0 && isParagraph) {
+        return injectBlockStyle(block, style, iconHtml);
+      }
+      if (i === 0) {
+        return (
+          `<p style="${textStyle}">${iconHtml}</p>\n` +
+          injectBlockStyle(block, style)
+        );
+      }
+      return injectBlockStyle(block, style);
+    })
+    .join("\n");
 };
 
-const Step: ComponentRenderer = (props, children) => {
+const Step: ComponentRenderer = (props, children, ctx) => {
   const number = props.number ?? "";
   const title = props.title ?? "";
-  return `<div style="margin: 20px 0; padding: 16px 20px; border: 1px solid #e0e0e0; border-radius: 8px;"><div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #1976d2; color: #fff; font-weight: bold; font-size: 14px; flex-shrink: 0;">${number}</span><span style="font-size: 1.1em; font-weight: bold;">${title}</span></div>${children}</div>`;
+  const headerHtml = `<p style="border-left: 4px solid #1976d2; padding: 12px 20px; background: #e3f2fd;"><span style="display: inline-block; width: 24px; height: 24px; border-radius: 50%; background: #1976d2; color: #fff; font-weight: bold; font-size: 12px; text-align: center; line-height: 24px;">${number}</span> <strong>${title}</strong></p>`;
+  const stepStyle = `border-left: 4px solid #1976d2; padding: 4px 20px`;
+
+  const blocks = ctx?.childBlocks;
+  if (!blocks || blocks.length === 0) {
+    return headerHtml;
+  }
+
+  const contentBlocks = blocks.filter((b) => b !== BLANK_BLOCK);
+  const styledChildren = contentBlocks.map((block) =>
+    injectBlockStyle(block, stepStyle),
+  );
+
+  return [headerHtml, ...styledChildren].join("\n");
 };
 
 const Badge: ComponentRenderer = (props, children) => {
