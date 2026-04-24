@@ -3,23 +3,19 @@ name: Release
 on:
   push:
     branches: [main]
-  workflow_dispatch:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 permissions:
   contents: write
+  pull-requests: write
   id-token: write
 
 jobs:
-  release-core:
+  release:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, 'chore(release):')
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: pnpm/action-setup@v4
 
@@ -33,170 +29,13 @@ jobs:
 
       - run: pnpm turbo build
 
-      - name: Check for releasable changes
-        id: check
-        run: |
-          LAST_TAG=$(git tag -l 'md-to-naver-blog@*' --sort=-v:refname | head -n1)
-          if [ -z "$LAST_TAG" ]; then
-            echo "has_changes=true" >> "$GITHUB_OUTPUT"
-          else
-            CHANGES=$(git diff --name-only "$LAST_TAG"..HEAD -- packages/core/src/ packages/core/package.json)
-            if [ -n "$CHANGES" ]; then
-              echo "has_changes=true" >> "$GITHUB_OUTPUT"
-              echo "Changed files in core:"
-              echo "$CHANGES"
-            else
-              echo "has_changes=false" >> "$GITHUB_OUTPUT"
-              echo "No changes in packages/core since $LAST_TAG, skipping release"
-            fi
-          fi
-
-      - name: Generate changelog and bump version
-        if: steps.check.outputs.has_changes == 'true'
-        run: npx changelogen --bump --no-commit --no-tag
-        working-directory: packages/core
-
-      - name: Read new version
-        if: steps.check.outputs.has_changes == 'true'
-        id: version
-        run: echo "version=$(node -p "require('./packages/core/package.json').version")" >> "$GITHUB_OUTPUT"
-
-      - name: Commit and tag
-        if: steps.check.outputs.has_changes == 'true'
-        run: |
-          VERSION="md-to-naver-blog@${{ steps.version.outputs.version }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --cached --quiet || git commit -m "chore(release): ${VERSION}"
-          if git rev-parse "${VERSION}" >/dev/null 2>&1; then
-            echo "Tag ${VERSION} already exists, skipping"
-          else
-            git tag "${VERSION}"
-          fi
-          git push --follow-tags
-
-      - name: Create GitHub Release
-        if: steps.check.outputs.has_changes == 'true'
-        run: npx changelogen gh release --push md-to-naver-blog@${{ steps.version.outputs.version }}
-        working-directory: packages/core
+      - name: Create Release PR or Publish
+        uses: changesets/action@v1
+        with:
+          version: pnpm changeset version
+          publish: pnpm changeset publish
+          title: "chore(release): version packages"
+          commit: "chore(release): version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true
-
-      - name: Check if already published
-        id: npm-check
-        run: |
-          VERSION="${{ steps.version.outputs.version || '' }}"
-          if [ -z "$VERSION" ]; then
-            VERSION=$(node -p "require('./packages/core/package.json').version")
-          fi
-          if npm view "@jjlabsio/md-to-naver-blog@${VERSION}" version 2>/dev/null | grep -q .; then
-            echo "published=true" >> "$GITHUB_OUTPUT"
-            echo "v${VERSION} already published to npm, skipping"
-          else
-            echo "published=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Publish to npm
-        if: steps.npm-check.outputs.published == 'false'
-        run: npm publish --access public
-        working-directory: packages/core
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  release-cli:
-    needs: [release-core]
-    if: always() && (github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, 'chore(release):'))
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: "pnpm"
-          registry-url: "https://registry.npmjs.org"
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm turbo build
-
-      - name: Check for releasable changes
-        id: check
-        run: |
-          LAST_TAG=$(git tag -l 'mtnb@*' --sort=-v:refname | head -n1)
-          if [ -z "$LAST_TAG" ]; then
-            echo "has_changes=true" >> "$GITHUB_OUTPUT"
-            echo "No previous mtnb tag found, first release"
-          else
-            CHANGES=$(git diff --name-only "$LAST_TAG"..HEAD -- packages/cli/src/ packages/cli/package.json)
-            if [ -n "$CHANGES" ]; then
-              echo "has_changes=true" >> "$GITHUB_OUTPUT"
-              echo "Changed files in cli:"
-              echo "$CHANGES"
-            else
-              echo "has_changes=false" >> "$GITHUB_OUTPUT"
-              echo "No changes in packages/cli since $LAST_TAG, skipping release"
-            fi
-          fi
-
-      - name: Generate changelog and bump version
-        if: steps.check.outputs.has_changes == 'true'
-        run: npx changelogen --bump --no-commit --no-tag
-        working-directory: packages/cli
-
-      - name: Read new version
-        if: steps.check.outputs.has_changes == 'true'
-        id: version
-        run: echo "version=$(node -p "require('./packages/cli/package.json').version")" >> "$GITHUB_OUTPUT"
-
-      - name: Commit and tag
-        if: steps.check.outputs.has_changes == 'true'
-        run: |
-          VERSION="mtnb@${{ steps.version.outputs.version }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --cached --quiet || git commit -m "chore(release): ${VERSION}"
-          if git rev-parse "${VERSION}" >/dev/null 2>&1; then
-            echo "Tag ${VERSION} already exists, skipping"
-          else
-            git tag "${VERSION}"
-          fi
-          git push --follow-tags
-
-      - name: Create GitHub Release
-        if: steps.check.outputs.has_changes == 'true'
-        run: npx changelogen gh release --push mtnb@${{ steps.version.outputs.version }}
-        working-directory: packages/cli
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true
-
-      - name: Check if already published
-        id: npm-check
-        run: |
-          VERSION="${{ steps.version.outputs.version || '' }}"
-          if [ -z "$VERSION" ]; then
-            VERSION=$(node -p "require('./packages/cli/package.json').version")
-          fi
-          if npm view "@jjlabsio/mtnb@${VERSION}" version 2>/dev/null | grep -q .; then
-            echo "published=true" >> "$GITHUB_OUTPUT"
-            echo "mtnb-v${VERSION} already published to npm, skipping"
-          else
-            echo "published=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Publish to npm
-        if: steps.npm-check.outputs.published == 'false'
-        run: npm publish --access public
-        working-directory: packages/cli
-        env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
