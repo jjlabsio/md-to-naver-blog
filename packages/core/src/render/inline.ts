@@ -1,5 +1,6 @@
 import type { PhrasingContent } from "mdast";
 import type { ConvertOptions } from "../index.js";
+import { createError } from "../pipeline/errors.js";
 import type { RenderContext } from "./block.js";
 import {
   createComponentRenderCtx,
@@ -20,7 +21,7 @@ interface MdxJsxTextElementLike {
 type PhrasingContentLike =
   | (PhrasingContent & { type: string; [key: string]: unknown })
   | MdxJsxTextElementLike
-  | { type: "mdxTextExpression" };
+  | { type: "mdxTextExpression"; value?: string; position?: { start?: { line?: number; column?: number; offset?: number }; end?: { line?: number; column?: number; offset?: number } } };
 
 const INLINE_CODE_STYLE =
   "background-color: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: &quot;Courier New&quot;, monospace; font-size: 0.9em;";
@@ -105,6 +106,9 @@ function renderNodeToMixedText(
         placeholders,
       );
     case "mdxTextExpression":
+      ctx?.errors?.pushAll([
+        createError("MDX_RUNTIME_EXPR", undefined, node, "info"),
+      ]);
       return "";
     default:
       if (Array.isArray(node.children)) {

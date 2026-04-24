@@ -12,7 +12,7 @@ import type {
   TableRow,
 } from "mdast";
 import type { ConvertOptions, RenderCache } from "../index.js";
-import type { ParseError } from "../pipeline/errors.js";
+import { createError, type ParseError } from "../pipeline/errors.js";
 import {
   isRegisteredComponentName,
   renderComponent,
@@ -49,11 +49,13 @@ interface FootnoteDefinitionLike {
 
 interface MdxjsEsmLike {
   type: "mdxjsEsm";
+  value?: string;
   position?: PositionLike;
 }
 
 interface MdxFlowExpressionLike {
   type: "mdxFlowExpression";
+  value?: string;
   position?: PositionLike;
 }
 
@@ -248,9 +250,22 @@ function renderNodeEntries(
       ];
     case "definition":
     case "footnoteDefinition":
-    case "mdxjsEsm":
-    case "mdxFlowExpression":
       return [];
+    case "mdxjsEsm": {
+      const esmNode = node as MdxjsEsmLike;
+      const esmValue = (esmNode.value ?? "").trimStart();
+      const esmCode = esmValue.startsWith("export")
+        ? "MDX_EXPORT" as const
+        : "MDX_IMPORT" as const;
+      ctx.errors?.pushAll([createError(esmCode, undefined, esmNode, "info")]);
+      return [];
+    }
+    case "mdxFlowExpression": {
+      ctx.errors?.pushAll([
+        createError("MDX_RUNTIME_EXPR", undefined, node, "info"),
+      ]);
+      return [];
+    }
     case "mdxJsxFlowElement":
       return [
         createCachedEntry("component", node, ctx, () =>
