@@ -8,6 +8,7 @@ import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_MARKDOWN } from "@/constants/default-markdown";
 import { useConverter } from "@/hooks/use-converter";
+import { ErrorBanner } from "@/components/error-banner";
 
 function ClearButton({ onClick }: { onClick: () => void }) {
   return (
@@ -22,7 +23,7 @@ export function Converter() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [markdown, setMarkdown] = useState(DEFAULT_MARKDOWN);
   const deferredMarkdown = useDeferredValue(markdown);
-  const { blocks, html } = useConverter(deferredMarkdown);
+  const { blocks, html, errors } = useConverter(deferredMarkdown);
 
   const handleValue = useCallback((value: string) => {
     setMarkdown(value);
@@ -42,6 +43,7 @@ export function Converter() {
           </span>
           <ClearButton onClick={handleClear} />
         </div>
+        <ErrorBanner errors={errors} />
         <MarkdownInput
           ref={textareaRef}
           defaultValue={DEFAULT_MARKDOWN}

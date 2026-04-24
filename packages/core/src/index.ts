@@ -4,6 +4,8 @@ import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import type { ParseError } from "./pipeline/errors.js";
 import { ErrorCollector } from "./pipeline/errors.js";
+
+export type { ParseError } from "./pipeline/errors.js";
 import { parseMdx } from "./pipeline/parse.js";
 import { renderRoot } from "./render/block.js";
 
