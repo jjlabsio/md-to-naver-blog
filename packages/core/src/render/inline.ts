@@ -31,7 +31,7 @@ type PhrasingContentLike =
     };
 
 const INLINE_CODE_STYLE =
-  "font-family: &quot;Courier New&quot;, monospace; font-size: 0.9em;";
+  "color: #c7254e; font-weight: bold; font-family: &quot;Courier New&quot;, monospace; font-size: 0.9em;";
 
 export function renderInline(
   nodes: PhrasingContent[],
@@ -79,9 +79,9 @@ function renderNodeToMixedText(
       );
     case "inlineCode":
       return addPlaceholder(
-        `<code style="${INLINE_CODE_STYLE}">\`${escapeHtml(
+        `<code style="${INLINE_CODE_STYLE}">${escapeHtml(
           String(node.value ?? ""),
-        )}\`</code>`,
+        )}</code>`,
         placeholders,
       );
     case "link":
@@ -211,7 +211,7 @@ function processInlineMixed(
       const end = text.indexOf("`", i + 1);
       if (end !== -1) {
         const code = text.slice(i + 1, end);
-        result += `<code style="${INLINE_CODE_STYLE}">\`${escapeHtml(code)}\`</code>`;
+        result += `<code style="${INLINE_CODE_STYLE}">${escapeHtml(code)}</code>`;
         i = end + 1;
         continue;
       }
