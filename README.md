@@ -88,6 +88,76 @@ await page.evaluate(getHtmlClipboardScript(html));
 await page.evaluate(getTextClipboardScript(title));
 ```
 
+## v1 → v2 Migration
+
+v2.0.0은 파서를 자체 정규식에서 `unified + remark-parse + remark-gfm + remark-mdx` 기반으로 교체한 메이저 업그레이드입니다.
+
+### Breaking Changes
+
+#### `ComponentProps` 타입 변경
+
+v1에서는 모든 attribute가 `string`이었지만, v2에서는 literal attribute를 원시 타입으로 평가합니다.
+
+```ts
+// v1: Record<string, string>
+// v2: Record<string, string | number | boolean | null>
+```
+
+#### `ConvertResult.errors` 필드 추가
+
+v2에서는 파싱 에러 시 throw 대신 `errors` 배열로 수집합니다.
+
+```ts
+// v1
+const { title, html } = convert(markdown);
+
+// v2
+const { title, html, errors } = convert(markdown);
+if (errors.length > 0) {
+  console.warn(`${errors.length}개의 파싱 경고가 있습니다.`);
+}
+```
+
+#### 파서 교체에 따른 출력 차이
+
+대부분의 입력에서 동일한 출력을 생성하지만, 일부 edge case에서 미묘한 차이가 발생할 수 있습니다. 기존 테스트가 있다면 출력을 비교해 확인하세요.
+
+### New Features
+
+#### `ComponentRenderer` ctx 파라미터 (optional)
+
+renderer의 세 번째 인자로 컨텍스트 정보를 받을 수 있습니다. 기존 2-arg renderer는 수정 없이 그대로 동작합니다.
+
+```ts
+// v1 (계속 동작)
+const renderer = (props, children) => `<div>${children}</div>`;
+
+// v2 (ctx 활용)
+const renderer = (props, children, ctx) =>
+  `<div data-depth="${ctx?.depth}" data-index="${ctx?.index}">${children}</div>`;
+```
+
+#### JSX children block-level 재귀 렌더링
+
+컨테이너 컴포넌트 안에 표, 리스트, 코드블록, 중첩 컴포넌트를 자유롭게 배치할 수 있습니다.
+
+```mdx
+<Step title="설정">
+
+| 항목 | 설명 |
+|------|------|
+| A    | B    |
+
+1. 첫 번째 단계
+2. 두 번째 단계
+
+</Step>
+```
+
+#### graceful fallback
+
+닫히지 않은 태그, runtime expression (`{variable}`), `import`/`export` 구문은 throw 없이 `errors` 배열에 수집되고, `html`은 가능한 부분까지 best-effort로 생성됩니다.
+
 ## CLI
 
 마크다운 파일을 변환하고 브라우저에서 미리보기를 열어 제목, 본문, 태그를 각각 서식 복사할 수 있습니다.
