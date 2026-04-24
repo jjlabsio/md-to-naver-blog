@@ -81,15 +81,15 @@ const Step: ComponentRenderer = (props, children, ctx) => {
 };
 
 const Badge: ComponentRenderer = (props, children) => {
-  const colorMap: Record<string, { bg: string; text: string }> = {
-    green: { bg: "#e8f5e9", text: "#2e7d32" },
-    blue: { bg: "#e3f2fd", text: "#1565c0" },
-    red: { bg: "#fce4ec", text: "#c62828" },
-    gray: { bg: "#f5f5f5", text: "#616161" },
+  const colorMap: Record<string, string> = {
+    green: "#2e7d32",
+    blue: "#1565c0",
+    red: "#c62828",
+    gray: "#616161",
   };
   const color = String(props.color || "gray");
-  const { bg, text } = colorMap[color] ?? colorMap.gray;
-  return `<span style="display: inline-block; background: ${bg}; color: ${text}; padding: 2px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">${children}</span>`;
+  const textColor = colorMap[color] ?? colorMap.gray;
+  return `<strong style="color: ${textColor};">[${children}]</strong>`;
 };
 
 const Divider: ComponentRenderer = (props) => {
