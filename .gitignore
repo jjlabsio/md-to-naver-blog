@@ -6,4 +6,6 @@ dist
 .crew
 .gstack/
 .claude/
+.mdf/
+.worktrees/
 *.tsbuildinfo
