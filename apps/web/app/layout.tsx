@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
+import { env } from "@/lib/env";
 import "./globals.css";
 
 const SITE_URL = "https://mtnb.dev";
@@ -30,6 +31,9 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
+  },
+  other: {
+    "naver-site-verification": env.NAVER_SITE_VERIFICATION,
   },
 };
 

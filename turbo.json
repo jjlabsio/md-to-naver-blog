@@ -3,6 +3,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": ["NAVER_SITE_VERIFICATION"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "lint": {

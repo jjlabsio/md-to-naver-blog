@@ -28,6 +28,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm turbo build
+        env:
+          NAVER_SITE_VERIFICATION: ci-verification-placeholder
 
       - name: Create Release PR or Publish
         uses: changesets/action@v1
