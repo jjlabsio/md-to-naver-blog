@@ -26,3 +26,5 @@ jobs:
       - run: pnpm turbo test
 
       - run: pnpm turbo build
+        env:
+          NAVER_SITE_VERIFICATION: ci-verification-placeholder
