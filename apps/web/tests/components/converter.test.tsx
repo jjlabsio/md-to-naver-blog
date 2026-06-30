@@ -27,6 +27,14 @@ describe("Converter", () => {
     );
   });
 
+  it("does not render a separate top guide note", () => {
+    render(<Converter />);
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("네이버 블로그용 HTML 미리보기"),
+    ).toBeInTheDocument();
+  });
+
   it("converts markdown to HTML on input", () => {
     render(<Converter />);
     const textareas = screen.getAllByPlaceholderText(/마크다운을 입력/);
@@ -43,7 +51,11 @@ describe("Converter", () => {
   it("shows default example in preview on initial render", () => {
     render(<Converter />);
     const previews = screen.getAllByTestId("html-preview");
-    const hasContent = previews.some((p) => p.innerHTML.includes("마크다운"));
+    const hasContent = previews.some(
+      (p) =>
+        p.innerHTML.includes("마크다운 -&gt; 네이버 블로그 HTML 변환기") &&
+        p.innerHTML.includes("CLI와 라이브러리도 함께 제공"),
+    );
     expect(hasContent).toBe(true);
   });
 
