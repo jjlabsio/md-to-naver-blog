@@ -71,35 +71,37 @@ export function Converter() {
   }, []);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden lg:grid lg:grid-cols-2 lg:grid-rows-1">
-      <div className="flex min-h-0 flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground">
-              마크다운 입력
-            </span>
-            <ExampleSelect
-              value={selectedExample}
-              onChange={handleExampleChange}
-            />
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="grid min-h-0 flex-1 gap-4 overflow-hidden lg:grid-cols-2">
+        <div className="flex min-h-0 flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground">
+                마크다운 입력
+              </span>
+              <ExampleSelect
+                value={selectedExample}
+                onChange={handleExampleChange}
+              />
+            </div>
+            <ClearButton onClick={handleClear} />
           </div>
-          <ClearButton onClick={handleClear} />
+          <ErrorBanner errors={errors} />
+          <MarkdownInput
+            ref={textareaRef}
+            defaultValue={DEFAULT_MARKDOWN}
+            onValue={handleValue}
+          />
         </div>
-        <ErrorBanner errors={errors} />
-        <MarkdownInput
-          ref={textareaRef}
-          defaultValue={DEFAULT_MARKDOWN}
-          onValue={handleValue}
-        />
-      </div>
-      <div className="flex min-h-0 flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-muted-foreground">
-            변환 결과
-          </span>
-          <CopyButton html={html} />
+        <div className="flex min-h-0 flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-muted-foreground">
+              네이버 블로그용 HTML 미리보기
+            </span>
+            <CopyButton html={html} />
+          </div>
+          <HtmlPreview blocks={blocks} />
         </div>
-        <HtmlPreview blocks={blocks} />
       </div>
     </div>
   );

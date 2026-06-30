@@ -6,7 +6,7 @@ import "./globals.css";
 const SITE_URL = "https://mtnb.dev";
 const TITLE = "MTNB - 네이버 블로그 마크다운 변환기";
 const DESCRIPTION =
-  "마크다운을 네이버 블로그에 바로 붙여넣을 수 있는 HTML로 변환합니다. 코드 블록 하이라이팅 지원.";
+  "네이버 블로그 자동화를 위한 오픈소스 마크다운 변환기입니다. 마크다운 글을 네이버 블로그에 붙여넣을 수 있는 HTML로 변환하고, 서식 복사와 CLI, 라이브러리를 지원합니다.";
 
 export const metadata: Metadata = {
   title: TITLE,

@@ -27,12 +27,7 @@ export default function Home() {
             height={24}
             className="rounded"
           />
-          <h1 className="text-xl font-bold">
-            MTNB
-            <span className="ml-1.5 text-sm font-normal text-muted-foreground">
-              Markdown to Naver Blog
-            </span>
-          </h1>
+          <h1 className="text-xl font-bold">MTNB</h1>
         </div>
         <Button variant="ghost" size="icon" asChild>
           <a
@@ -41,7 +36,7 @@ export default function Home() {
             rel="noopener noreferrer"
             aria-label="GitHub"
           >
-            <GitHubIcon className="h-5 w-5" />
+            <GitHubIcon className="!h-6 !w-6" />
           </a>
         </Button>
       </header>
